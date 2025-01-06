@@ -1,0 +1,144 @@
+{
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "地理知识挑战"
+			}
+		},
+		{
+			"path": "pages/game/flags/index",
+			"style": {
+				"navigationBarTitleText": "旗帜挑战",
+				"navigationBarBackgroundColor": "#2979FF",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/game/shapes/index",
+			"style": {
+				"navigationBarTitleText": "国家轮廓挑战",
+				"navigationBarBackgroundColor": "#2979FF",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/game/capitals/index",
+			"style": {
+				"navigationBarTitleText": "首都挑战",
+				"navigationBarBackgroundColor": "#2979FF",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/my/index",
+			"style": {
+				"navigationBarTitleText": "我的",
+				"navigationBarBackgroundColor": "#2979FF",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/achievements",
+			"style": {
+				"navigationBarTitleText": "我的成就",
+				"navigationBarBackgroundColor": "#2979FF",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/game/timedChallenge/index",
+			"style": {
+				"navigationBarTitleText": "限时挑战",
+				"navigationBarBackgroundColor": "#2979FF",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/game/multiplayer/index",
+			"style": {
+				"navigationBarTitleText": "多人对战",
+				"navigationBarBackgroundColor": "#2979FF",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/game/randomMode/index",
+			"style": {
+				"navigationBarTitleText": "随机模式",
+				"navigationBarBackgroundColor": "#2979FF",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/my/feedback",
+			"style": {
+				"navigationBarTitleText": "意见反馈",
+				"enablePullDownRefresh": false,
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/my/about",
+			"style": {
+				"navigationBarTitleText": "关于我们",
+				"enablePullDownRefresh": false,
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/about/privacy",
+			"style": {
+				"navigationBarTitleText": "隐私政策",
+				"enablePullDownRefresh": false,
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/about/agreement",
+			"style": {
+				"navigationBarTitleText": "用户协议",
+				"enablePullDownRefresh": false,
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "地理知识挑战",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"tabBar": {
+		"color": "#8a8a8a",
+		"selectedColor": "#2979FF",
+		"backgroundColor": "#ffffff",
+		"borderStyle": "white",
+		"height": "50px",
+		"fontSize": "14px",
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"iconPath": "static/tabbar/home.png",
+				"selectedIconPath": "static/tabbar/home-active.png",
+				"text": "首页"
+			},
+			{
+				"pagePath": "pages/achievements",
+				"text": "成就",
+				"iconPath": "static/tabbar/user.png",
+				"selectedIconPath": "static/tabbar/user-active.png"
+			},
+			{
+				"pagePath": "pages/my/index",
+				"iconPath": "static/tabbar/user.png",
+				"selectedIconPath": "static/tabbar/user-active.png",
+				"text": "我的"
+			}
+		]
+	}
+}

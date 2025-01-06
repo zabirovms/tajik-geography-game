@@ -1,0 +1,1466 @@
+<template>
+	<view class="container">
+		<!-- 加载状态 -->
+		<view v-if="isLoading" class="loading-wrapper">
+			<view class="loading-spinner"></view>
+			<text>加载中...</text>
+		</view>
+
+		<!-- 下拉刷新提示 -->
+		<view v-if="isPulling" class="pull-tip">
+			<uni-icons type="refresh" size="24" :class="{'rotating': isPulling}"></uni-icons>
+			<text>{{pullText}}</text>
+		</view>
+
+		<!-- 引导用户 -->
+		<view v-if="showGuide" class="guide-popup">
+			<view class="guide-content">
+				<text class="guide-title">欢迎来到地理知识挑战！</text>
+				<text class="guide-description">选择您感兴趣的游戏模式开始挑战，点击下方的分享按钮与朋友一起玩吧！</text>
+				<button @tap="closeGuide" class="skip-button">关闭引导</button>
+			</view>
+		</view>
+
+		<!-- 顶部提示区 -->
+		<view class="top-tips">
+			<view class="tip-card" hover-class="tip-hover">
+				<uni-icons type="info" size="20" color="#2979FF"></uni-icons>
+				<text class="tip-text">欢迎来到地理知识挑战，选择您感兴趣的游戏模式开始挑战！</text>
+			</view>
+		</view>
+
+		<!-- 顶部欢迎区 -->
+		<view class="welcome-section">
+			<view class="header">
+				<text class="title">地理知识挑战</text>
+				<text class="subtitle">测试你的地理知识，挑战高分！</text>
+			</view>
+			<view class="stats-bar">
+				<view class="stats-item" v-for="(stat, index) in statsData" :key="index">
+					<text class="stats-num" :class="{'animate': showStats}">{{stat.value}}</text>
+					<text class="stats-label">{{stat.label}}</text>
+					<text class="stats-trend" v-if="stat.trend">{{stat.trend > 0 ? '+' : ''}}{{stat.trend}}%</text>
+				</view>
+			</view>
+			
+			<!-- 新增：成就进度展示 -->
+			<view class="achievement-bar">
+				<view class="achievement-item" v-for="(achievement, key) in achievements" :key="key">
+					<view class="progress-ring" :style="{ '--progress': `${achievement.progress * 3.6}deg` }">
+						<text class="progress-text">{{achievement.progress}}%</text>
+						<view class="progress-indicator" :class="{'completed': achievement.progress >= 100}"></view>
+					</view>
+					<text class="achievement-label">{{achievement.label}}</text>
+					<!-- <text class="achievement-next-level">距离下一级：{{100 - achievement.progress}}%</text> -->
+				</view>
+			</view>
+		</view>
+
+		<!-- 新增：分享按钮 -->
+		<view class="share-button" @tap="shareContent">
+			<uni-icons type="share" size="32" color="#FFFFFF"></uni-icons>
+			<text class="share-text">分享</text>
+		</view>
+
+		<!-- 增加间距 -->
+		<view class="section-spacing"></view>
+
+		<view class="section-title">
+			<text class="main">选择游戏</text>
+			<text class="sub">选择您感兴趣的挑战模式开始游戏</text>
+		</view>
+
+		<view class="search-bar">
+			<uni-icons type="search" size="20" color="#666666"></uni-icons>
+			<input 
+				type="text" 
+				v-model="searchKey" 
+				placeholder="搜索游戏模式" 
+				@input="searchGames"
+			/>
+		</view>
+
+		<scroll-view scroll-x class="category-scroll">
+			<view class="category-tags">
+				<view 
+					class="category-tag" 
+					v-for="(tag, index) in categories" 
+					:key="index"
+					:class="{'active': currentCategory === tag}"
+					@tap="filterByCategory(tag)"
+				>
+					{{tag}}
+				</view>
+			</view>
+		</scroll-view>
+
+		<view class="game-list">
+			<view v-if="filteredGames.length === 0" class="no-games">
+				<text>当前分类暂无游戏</text>
+			</view>
+			
+			<view class="game-card" 
+				  v-for="game in filteredGames" 
+				  :key="game.key"
+				  hover-class="card-hover" 
+				  @tap="showGameDetails(game.key)">
+				<view class="card-left">
+					<view :class="['icon-wrapper', getIconColor(game.key), 'pulse']">
+						<uni-icons :type="getGameIcon(game.key)" size="32" color="#FFFFFF"></uni-icons>
+					</view>
+				</view>
+				<view class="card-right">
+					<text class="game-title">{{game.title}}</text>
+					<text class="game-desc">{{game.description}}</text>
+					<view class="game-modes">
+						<text class="mode-tag" v-for="mode in game.modes" :key="mode.name">
+							{{mode.name}}
+						</text>
+						<text class="difficulty">难度: {{'★'.repeat(game.modes[0].difficulty)}}{{
+							'☆'.repeat(3-game.modes[0].difficulty)
+						}}</text>
+					</view>
+					<text class="game-bonus">首次通关奖励：{{game.rewards.firstWin}}积分</text>
+				</view>
+			</view>
+		</view>
+
+		<!-- 游戏模式详细介绍弹窗 -->
+		<view v-if="showDetails" class="details-popup">
+			<view class="popup-content">
+				<text class="popup-title">{{ selectedGame.title }}</text>
+				<text class="popup-description">{{ selectedGame.description }}</text>
+				<view class="button-group">
+					<button class="start-button" @tap="startGame(selectedGame.path)">开始游戏</button>
+					<button class="close-button" @tap="closeDetails">关闭</button>
+				</view>
+			</view>
+		</view>
+
+		<!-- 排行榜展示 -->
+		<view class="leaderboard">
+			<text class="leaderboard-title">排行榜</text>
+			<view v-for="(player, index) in leaderboard" :key="index" class="leaderboard-item">
+				<text>{{ index + 1 }}. {{ player.name }} - {{ player.score }}</text>
+			</view>
+		</view>
+
+		<!-- 底部提示区 -->
+		<view class="bottom-tips">
+			<view class="tip-card" hover-class="tip-hover">
+				<uni-icons type="info" size="20" color="#2979FF"></uni-icons>
+				<text class="tip-text">每个游戏模式都有独特的玩法和计分规则</text>
+			</view>
+			<view class="tip-card" hover-class="tip-hover">
+				<uni-icons type="star" size="20" color="#FF9500"></uni-icons>
+				<text class="tip-text">完成挑战可以获得积分和成就徽章</text>
+			</view>
+		</view>
+
+		<!-- 帮助中心展示 -->
+		<button @tap="openHelp" class="help-button">帮助中心</button> <!-- 添加帮助中心按钮 -->
+		<help v-if="showHelp" @close="showHelp = false" /> <!-- 显示帮助中心 -->
+		
+		<!-- 添加主题切换按钮 -->
+		<view class="theme-switch" @tap="toggleTheme">
+			<uni-icons :type="isDarkMode ? 'sun' : 'moon'" size="24" :color="isDarkMode ? '#FFFFFF' : '#333333'"></uni-icons>
+		</view>
+
+		<!-- 添加返回顶部按钮 -->
+		<view class="back-to-top" @tap="scrollToTop">
+			<uni-icons type="arrow-up" size="24" color="#FFFFFF"></uni-icons>
+		</view>
+
+		<!-- 添加推荐游戏部分 -->
+		<view class="recommended-section">
+			<view class="section-header">
+				<text class="title">推荐游戏</text>
+				<text class="subtitle">根据您的游戏习惯推荐</text>
+			</view>
+			
+			<scroll-view scroll-x class="recommended-scroll">
+				<view class="recommended-games">
+					<view class="recommend-card" 
+						  v-for="game in recommendedGames" 
+						  :key="game.key"
+						  @tap="showGameDetails(game.key)">
+						<view class="game-icon" :class="getIconColor(game.key)">
+							<uni-icons :type="getGameIcon(game.key)" size="32" color="#FFFFFF"></uni-icons>
+						</view>
+						<text class="game-name">{{game.title}}</text>
+						<text class="match-rate">匹配度 {{game.matchRate}}%</text>
+					</view>
+				</view>
+			</scroll-view>
+		</view>
+
+		<!-- 添加成就提示组件 -->
+		<view v-if="showAchievement" class="achievement-popup">
+			<view class="achievement-content">
+				<view class="achievement-icon">
+					<uni-icons type="star-filled" size="40" color="#FFD700"></uni-icons>
+				</view>
+				<text class="achievement-title">解锁新成就！</text>
+				<text class="achievement-name">{{newAchievement.name}}</text>
+				<text class="achievement-desc">{{newAchievement.description}}</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+import Help from '../help/help.vue'; // 导入帮助中心组件
+	export default {
+		 components: {
+        Help
+    },
+		data() {
+			return {
+				showStats: false,
+				showDetails: false,
+				showGuide: true, // 控制引导的显示
+				selectedGame: {},
+				achievements: {
+					flags: { progress: 80, label: '旗帜大师', nextLevel: '金牌大师' },
+					shapes: { progress: 45, label: '地形专家', nextLevel: '地形达人' },
+					capitals: { progress: 60, label: '首都通', nextLevel: '首都专家' }
+				},
+				games: {
+					flags: {
+						title: '旗帜挑战',
+						description: '探索世界各国的旗帜文化，从简单的国旗识别到深入了解旗帜的历史和含义。',
+						modes: [
+							{
+								name: '初级模式',
+								desc: '认识基本的国家旗帜',
+								difficulty: 1
+							},
+							{
+								name: '高级模式',
+								desc: '挑战稀有和相似的旗帜',
+								difficulty: 2
+							}
+						],
+						rewards: {
+							firstWin: 100,
+							streak: '经验翻倍',
+							achievement: '旗帜大师'
+						},
+						path: '/pages/game/flags/index'
+					},
+					shapes: {
+						title: '轮廓挑战',
+						description: '通过国家轮廓形状测试你的地理知识，培养空间识别能力。',
+						modes: [
+							{
+								name: '基础认知',
+								desc: '学习典型国家轮廓',
+								difficulty: 2
+							},
+							{
+								name: '速度挑战',
+								desc: '限时识别国家形状',
+								difficulty: 3
+							}
+						],
+						rewards: {
+							firstWin: 150,
+							streak: '积分加成',
+							achievement: '形状专家'
+						},
+						path: '/pages/game/shapes/index'
+					},
+					capitals: {
+						title: '首都挑战',
+						description: '测试你对世界各国首都的认知，从基础的首都匹配到深入的历史文化知识。',
+						modes: [
+							{
+								name: '首都配对',
+								desc: '将国家与其首都正确匹配',
+								difficulty: 2
+							},
+							{
+								name: '文化探索',
+								desc: '了解首都的历史和文化特色',
+								difficulty: 3
+							}
+						],
+						rewards: {
+							firstWin: 120,
+							streak: '额外经验值',
+							achievement: '首都专家'
+						},
+						path: '/pages/game/capitals/index'
+					},
+					timedChallenge: {
+						title: '限时挑战',
+						description: '在限定时间内回答尽可能多的地理问题，考验你的知识储备和反应速度。',
+						modes: [
+							{
+								name: '快速答题',
+								desc: '60秒内答题越多分数越高',
+								difficulty: 2
+							},
+							{
+								name: '生存模式',
+								desc: '答错即结束，争取最高分',
+								difficulty: 3
+							}
+						],
+						rewards: {
+							firstWin: 150,
+							streak: '时间奖励',
+							achievement: '时间大师'
+						},
+						path: '/pages/game/timedChallenge/index'
+					},
+					multiplayer: {
+						title: '多人对战',
+						description: '邀请好友一起参与地理知识竞赛，实时对战模式让学习更有趣。',
+						modes: [
+							{
+								name: '好友对战',
+								desc: '与好友进行1v1实时对战',
+								difficulty: 2
+							},
+							{
+								name: '团队竞赛',
+								desc: '组队进行多人竞赛',
+								difficulty: 2
+							}
+						],
+						rewards: {
+							firstWin: 200,
+							streak: '胜利连击奖励',
+							achievement: '对战王者'
+						},
+						path: '/pages/game/multiplayer/index'
+					},
+					randomMode: {
+						title: '随机模式',
+						description: '融合所有题型的随机挑战，每次体验都不同，提升综合地理知识。',
+						modes: [
+							{
+								name: '随机闯关',
+								desc: '随机组合各类题型进行挑战',
+								difficulty: 3
+							},
+							{
+								name: '每日挑战',
+								desc: '每天固定题目组合',
+								difficulty: 2
+							}
+						],
+						rewards: {
+							firstWin: 180,
+							streak: '随机奖励翻倍',
+							achievement: '全能达人'
+						},
+						path: '/pages/game/randomMode/index'
+					}
+				},
+				leaderboard: [], // 存储排行榜数据
+				showHelp: false, // 控制帮助中心的显示
+				statsData: [
+					{ value: '12', label: '游戏模式', trend: 5 },
+					{ value: '200+', label: '题目数量', trend: 10 },
+					{ value: '10K+', label: '挑战次数', trend: 15 }
+				],
+				isDarkMode: false,
+				searchKey: '',
+				filteredGames: [],
+				currentCategory: '全部',
+				categories: ['全部', '入门', '进阶', '挑战', '多人'],
+				scrollTop: 0,
+				gameCategories: {
+					flags: ['入门', '进阶'],
+					shapes: ['进阶', '挑战'],
+					capitals: ['入门', '进阶'],
+					timedChallenge: ['挑战'],
+					multiplayer: ['多人'],
+					randomMode: ['挑战', '多人']
+				},
+				isLoading: false,
+				isPulling: false,
+				pullText: '下拉刷新',
+				recommendedGames: [],
+				showAchievement: false,
+				newAchievement: null
+			}
+		},
+		created() {
+			// 确保 games 数据已经加载
+			if (this.games) {
+				this.initGamesList();
+			}
+		},
+		mounted() {
+			this.showStats = true;
+			this.checkGuideStatus(); // 检查引导状态
+			this.generateRandomLeaderboard(); // 生成随机排行榜数据
+		},
+		methods: {
+			openHelp() {
+				this.showHelp = true; // 打开帮助中心
+			},
+		
+			navigateToGame(url) {
+					uni.navigateTo({
+						url
+					})
+			},
+			shareContent() {
+				// 小程序分享功能
+				if (typeof uni.share === 'function') {
+					uni.share({
+						provider: 'weixin', // 分享到微信
+						scene: 'WXSceneSession', // 分享到微信好友
+						title: '地理知识挑战',
+						summary: '来挑战你的地理知识吧！',
+						imageUrl: '', // 可选，分享的图片
+						href: 'https://yourwebsite.com', // 分享链接
+						success: () => {
+							uni.showToast({
+								title: '分享成功',
+								icon: 'success',
+								duration: 2000
+							});
+						},
+						fail: (err) => {
+							console.error('分享失败', err);
+							uni.showToast({
+								title: '分享失败，请重试',
+								icon: 'none',
+								duration: 2000
+							});
+						}
+					});
+				} else {
+					console.error('分享功能不可用');
+				}
+			},
+			showGameDetails(gameKey) {
+				this.selectedGame = this.games[gameKey];
+				this.showDetails = true;
+			},
+			closeDetails() {
+				this.showDetails = false;
+			},
+			startGame(path) {
+				this.closeDetails();
+				this.navigateToGame(path);
+			},
+			closeGuide() {
+				this.showGuide = false; // 关闭引导
+				wx.setStorageSync('guideClosed', 'true'); // 记录用户关闭引导的状态
+			},
+			checkGuideStatus() {
+				const guideStatus = wx.getStorageSync('guideClosed'); // 获取存储的引导状态
+				if (guideStatus) {
+					this.showGuide = false; // 如果用户关闭过引导，则不再显示
+				}
+			},
+			// 生成随机排行榜数据
+			generateRandomLeaderboard() {
+				const names = ['玩家1', '玩家2', '玩家3', '玩家4', '玩家5', '玩家6', '玩家7', '玩家8', '玩家9', '玩家10'];
+				this.leaderboard = names.map(name => ({
+					name: name,
+					score: Math.floor(Math.random() * 1000) // 随机生成0到999的分数
+				}));
+				// 按分数降序排序
+				this.leaderboard.sort((a, b) => b.score - a.score);
+			},
+			// 获取排行榜数据
+			fetchLeaderboard() {
+				// 假设有一个 API 可以获取排行榜数据
+				fetch('/api/leaderboard')
+					.then(response => response.json())
+					.then(data => {
+						this.leaderboard = data; // 更新排行榜数据
+					})
+					.catch(error => {
+						console.error('获取排行榜失败', error);
+					});
+			},
+			// 提交分数到排行榜
+			submitScore(playerName, score) {
+				// 假设有一个 API 可以提交分数
+				fetch('/api/leaderboard', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({ name: playerName, score: score })
+				})
+				.then(response => response.json())
+				.then(data => {
+					console.log('分数提交成功', data);
+					this.fetchLeaderboard(); // 提交后重新获取排行榜
+				})
+				.catch(error => {
+					console.error('提交分数失败', error);
+				});
+			},
+			endGame(score) {
+				const playerName = prompt("请输入您的名字"); // 获取玩家名字
+				this.submitScore(playerName, score); // 提交分数
+			},
+			async onPullDownRefresh() {
+				this.isPulling = true;
+				this.pullText = '刷新中...';
+				
+				try {
+					await Promise.all([
+						this.refreshGameData(),
+						this.updateAchievements(),
+						this.fetchLeaderboard()
+					]);
+					
+					uni.showToast({
+						title: '刷新成功',
+						icon: 'success'
+					});
+				} catch (error) {
+					uni.showToast({
+						title: '刷新失败',
+						icon: 'error'
+					});
+				} finally {
+					this.isPulling = false;
+					this.pullText = '下拉刷新';
+					uni.stopPullDownRefresh();
+				}
+			},
+			onReachBottom() {
+				// 加载更多排行榜数据
+				if (this.hasMoreLeaderboard) {
+					this.loadMoreLeaderboard();
+				}
+			},
+			toggleTheme() {
+				this.isDarkMode = !this.isDarkMode;
+				// 保存主题设置
+				uni.setStorageSync('theme', this.isDarkMode ? 'dark' : 'light');
+			},
+			searchGames() {
+				// 先按分类过滤
+				this.filterByCategory(this.currentCategory);
+				
+				// 如果有搜索关键词，进一步过滤
+				if (this.searchKey) {
+					this.filteredGames = this.filteredGames.filter(game => 
+						game.title.includes(this.searchKey) || 
+						game.description.includes(this.searchKey)
+					);
+				}
+			},
+			filterByCategory(category) {
+				console.log('Filtering by category:', category); // 调试日志
+				
+				this.currentCategory = category;
+				
+				// 将 games 对象转换为数组，并添加 key
+				const gamesArray = Object.entries(this.games).map(([key, game]) => ({
+					...game,
+					key
+				}));
+				
+				if (category === '全部') {
+					this.filteredGames = gamesArray;
+				} else {
+					this.filteredGames = gamesArray.filter(game => 
+						this.gameCategories[game.key].includes(category)
+					);
+				}
+				
+				console.log('Filtered games:', this.filteredGames); // 调试日志
+			},
+			onPageScroll(e) {
+				this.scrollTop = e.scrollTop;
+			},
+			getIconColor(gameKey) {
+				const colorMap = {
+					flags: 'blue',
+					shapes: 'orange',
+					capitals: 'green',
+					timedChallenge: 'purple',
+					multiplayer: 'red',
+					randomMode: 'yellow'
+				};
+				return colorMap[gameKey] || 'blue';
+			},
+			getGameIcon(gameKey) {
+				const iconMap = {
+					flags: 'flag',
+					shapes: 'map',
+					capitals: 'location',
+					timedChallenge: 'calendar',
+					multiplayer: 'person',
+					randomMode: 'paperplane'
+				};
+				return iconMap[gameKey] || 'star';
+			},
+			// 初始化游戏列表
+			initGamesList() {
+				this.filterByCategory('全部');
+			},
+			generateRecommendations() {
+				// 基于用户历史记录和偏好生成推荐
+				const userHistory = uni.getStorageSync('gameHistory') || [];
+				const userPreferences = uni.getStorageSync('userPreferences') || {};
+				
+				// 实现推荐算法...
+				this.recommendedGames = Object.entries(this.games)
+					.map(([key, game]) => ({
+						...game,
+						key,
+						matchRate: this.calculateMatchRate(game, userHistory, userPreferences)
+					}))
+					.sort((a, b) => b.matchRate - a.matchRate)
+					.slice(0, 3);
+			},
+			showAchievementPopup(achievement) {
+				this.newAchievement = achievement;
+				this.showAchievement = true;
+				
+				setTimeout(() => {
+					this.showAchievement = false;
+				}, 3000);
+			}
+		},
+		// 添加监听器以便调试
+		watch: {
+			currentCategory(newVal) {
+				console.log('Category changed to:', newVal);
+			},
+			
+			filteredGames(newVal) {
+				console.log('Filtered games updated:', newVal);
+			}
+		}
+	}
+</script>
+
+<style lang="scss" scoped>
+	.container {
+		min-height: 100vh;
+		background: v-bind('isDarkMode ? "#1a1a1a" : "#f5f7fa"');
+		color: v-bind('isDarkMode ? "#FFFFFF" : "#333333"');
+		transition: all 0.3s ease;
+		padding: 30rpx;
+		padding-bottom: 120rpx; // 为底部导航留出空间
+	}
+
+	.header {
+		text-align: center;
+		margin: 40rpx 0 60rpx;
+	}
+
+	.title {
+		font-size: 44rpx;
+		font-weight: bold;
+		color: #333;
+		margin-bottom: 16rpx;
+		display: block;
+	}
+
+	.subtitle {
+		font-size: 28rpx;
+		color: #666;
+	}
+
+	.game-list {
+		display: flex;
+		flex-direction: column;
+		gap: 30rpx;
+		padding: 20rpx 0;
+		margin: 20rpx 0;
+	}
+
+	.game-card {
+		background: #fff;
+		border-radius: 24rpx;
+		padding: 30rpx;
+		display: flex;
+		align-items: flex-start;
+		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+		transition: all 0.3s ease;
+		position: relative;
+		overflow: hidden;
+		opacity: 0;
+		
+		@for $i from 1 through 6 {
+			&:nth-child(#{$i}) {
+				animation: gameCardIn 0.6s ease-out forwards;
+				animation-delay: #{$i * 0.1}s;
+			}
+		}
+		
+		&:active {
+			transform: scale(0.98);
+			opacity: 0.95;
+		}
+		
+		&::before {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+			pointer-events: none;
+		}
+	}
+
+	@keyframes gameCardIn {
+		from {
+			opacity: 0;
+			transform: translateY(30rpx);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.card-left {
+		margin-right: 30rpx;
+	}
+
+	.icon-wrapper {
+		width: 100rpx;
+		height: 100rpx;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		
+		&.blue {
+			background: linear-gradient(135deg, #2979FF, #1565C0);
+		}
+		
+		&.orange {
+			background: linear-gradient(135deg, #FF9500, #F57C00);
+		}
+		
+		&.green {
+			background: linear-gradient(135deg, #34C759, #28A745);
+		}
+
+		&.purple {
+			background: linear-gradient(135deg, #9C27B0, #7B1FA2);
+		}
+
+		&.red {
+			background: linear-gradient(135deg, #F44336, #D32F2F);
+		}
+
+		&.yellow {
+			background: linear-gradient(135deg, #FFEB3B, #FBC02D);
+		}
+	}
+
+	.card-right {
+		flex: 1;
+	}
+
+	.game-title {
+		font-size: 34rpx;
+		font-weight: bold;
+		color: #333;
+		margin-bottom: 8rpx;
+		display: block;
+	}
+
+	.game-desc {
+		font-size: 26rpx;
+		color: #666;
+		margin-bottom: 16rpx;
+		display: block;
+	}
+
+	.game-modes {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 12rpx;
+		margin-top: 10rpx;
+		
+		.mode-tag {
+			font-size: 24rpx;
+			color: #2979FF;
+			background: rgba(41, 121, 255, 0.1);
+			padding: 6rpx 16rpx;
+			border-radius: 100rpx;
+		}
+		
+		.difficulty {
+			font-size: 24rpx;
+			color: #FF9500;
+			margin-left: auto;
+		}
+	}
+
+	.game-bonus {
+		font-size: 24rpx;
+		color: #34C759;
+		margin-top: 8rpx;
+	}
+
+	.welcome-section {
+		background: #fff;
+		border-radius: 24rpx;
+		padding: 40rpx 30rpx;
+		margin-bottom: 20rpx;
+		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+	}
+
+	.stats-bar {
+		display: flex;
+		justify-content: space-around;
+		margin-top: 20rpx;
+		padding-top: 20rpx;
+	}
+
+	.stats-item {
+		text-align: center;
+	}
+
+	.stats-num {
+		font-size: 42rpx;
+		font-weight: bold;
+		color: #2979FF;
+		display: block;
+		margin-bottom: 2rpx;
+		opacity: 0;
+		
+		&.animate {
+			animation: statsNumberIn 0.6s forwards;
+		}
+	}
+
+	@keyframes statsNumberIn {
+		from {
+			opacity: 0;
+			transform: translateY(10rpx);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.stats-label {
+		font-size: 24rpx;
+		color: #666;
+	}
+
+	.section-title {
+		margin: 40rpx 0 20rpx;
+		
+		.main {
+			font-size: 32rpx;
+			font-weight: bold;
+			color: #333;
+			display: block;
+			margin-bottom: 8rpx;
+			position: relative;
+			
+			&::after {
+				content: '';
+				position: absolute;
+				bottom: -8rpx;
+				left: 0;
+				width: 40rpx;
+				height: 4rpx;
+				background: #2979FF;
+				border-radius: 2rpx;
+			}
+		}
+		
+		.sub {
+			font-size: 26rpx;
+			color: #666;
+		}
+	}
+
+	.bottom-tips {
+		margin-top: 40rpx;
+		display: flex;
+		flex-direction: column;
+		gap: 20rpx;
+	}
+
+	.tip-card {
+		background: rgba(255, 255, 255, 0.9);
+		border-radius: 16rpx;
+		padding: 20rpx;
+		display: flex;
+		align-items: center;
+		gap: 16rpx;
+		backdrop-filter: blur(10px);
+		border: 1px solid rgba(255,255,255,0.1);
+		
+		.tip-text {
+			font-size: 26rpx;
+			color: #666;
+		}
+	}
+
+	@keyframes fadeInUp {
+		from {
+			opacity: 0;
+			transform: translateY(10rpx);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.card-hover {
+		transform: scale(0.98);
+		opacity: 0.95;
+		transition: all 0.2s ease;
+	}
+
+	.tip-hover {
+		transform: translateX(10rpx);
+		opacity: 0.8;
+	}
+
+	.icon-wrapper {
+		&.pulse {
+			animation: pulse 2s infinite;
+		}
+		
+		&.blue {
+			background: linear-gradient(135deg, #2979FF, #1565C0);
+			box-shadow: 0 4rpx 20rpx rgba(41, 121, 255, 0.2);
+		}
+		
+		&.orange {
+			background: linear-gradient(135deg, #FF9500, #F57C00);
+			box-shadow: 0 4rpx 20rpx rgba(255, 149, 0, 0.2);
+		}
+		
+		&.green {
+			background: linear-gradient(135deg, #34C759, #28A745);
+			box-shadow: 0 4rpx 20rpx rgba(52, 199, 89, 0.2);
+		}
+	}
+
+	@keyframes pulse {
+		0% {
+			transform: scale(1);
+		}
+		50% {
+			transform: scale(1.05);
+		}
+		100% {
+			transform: scale(1);
+		}
+	}
+
+	.game-modes {
+		.mode-tag {
+			transition: all 0.3s ease;
+			
+			&:hover {
+				background: rgba(41, 121, 255, 0.2);
+				transform: translateX(4rpx);
+			}
+		}
+	}
+
+	.achievement-bar {
+		display: flex;
+		justify-content: space-around;
+		margin-top: 20rpx;
+		padding-top: 20rpx;
+		border-top: 2rpx solid rgba(0, 0, 0, 0.05);
+	}
+
+	.achievement-item {
+		text-align: center;
+	}
+
+	.progress-ring {
+		width: 80rpx;
+		height: 80rpx;
+		border-radius: 50%;
+		background: conic-gradient(#2979FF var(--progress), #E8F0FE 0deg);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin: 0 auto 10rpx;
+		position: relative;
+		
+		&::before {
+			content: '';
+			position: absolute;
+			width: 70rpx;
+			height: 70rpx;
+			background: white;
+			border-radius: 50%;
+		}
+	}
+
+	.progress-text {
+		font-size: 28rpx;
+		font-weight: bold;
+		color: #2979FF;
+		position: relative;
+		z-index: 1;
+	}
+
+	.achievement-label {
+		font-size: 24rpx;
+		color: #666;
+		margin-top: 2rpx;
+	}
+
+	@keyframes shimmer {
+		100% {
+			transform: translateX(100%);
+		}
+	}
+
+	.section-spacing {
+		height: 20rpx; // 增加顶部提示区和游戏选择部分之间的间距
+	}
+
+	.top-tips {
+		margin-bottom: 20rpx; // 提示区底部间距
+	}
+
+	.tip-card {
+		padding: 15rpx; // 提示卡片内边距
+		border-radius: 10rpx; // 圆角
+		background: rgba(255, 255, 255, 0.9); // 背景颜色
+		box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1); // 阴影效果
+	}
+
+	.top-description {
+		margin-bottom: 10rpx; // 描述与提示区之间的间距
+		text-align: center; // 文本居中
+	}
+
+	.description-text {
+		font-size: 28rpx; // 描述文本大小
+		color: #333; // 描述文本颜色
+		font-weight: bold; // 描述文本加粗
+	}
+
+	.share-button {
+		background: #2979FF;
+		border-radius: 24rpx;
+		padding: 10rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin: 20rpx 0;
+		cursor: pointer;
+	}
+
+	.share-text {
+		color: #FFFFFF;
+		font-size: 28rpx;
+		margin-left: 10rpx;
+	}
+
+	.details-popup {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.8); /* 深色背景 */
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+	}
+
+	.popup-content {
+		background: white; /* 白色背景 */
+		padding: 30rpx; /* 增加内边距 */
+		border-radius: 20rpx; /* 圆角 */
+		text-align: center;
+		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.2); /* 阴影效果 */
+		max-width: 90%; /* 限制最大宽度 */
+	}
+
+	.popup-title {
+		font-size: 32rpx; /* 标题字体大小 */
+		font-weight: bold;
+		color: #2979FF; /* 主题颜色 */
+		margin-bottom: 15rpx; /* 底部间距 */
+	}
+
+	.popup-description {
+		font-size: 26rpx; /* 描述字体大小 */
+		color: #333; /* 深色文本 */
+		margin-bottom: 25rpx; /* 底部间距 */
+		line-height: 1.5; /* 行高 */
+	}
+
+	.button-group {
+		display: flex; /* 使用 flexbox 布局 */
+		justify-content: space-around; /* 按钮之间的间距 */
+		margin-top: 20rpx; /* 顶部间距 */
+	}
+
+	button {
+		color: white; /* 按钮文本颜色 */
+		border: none; /* 无边框 */
+		padding: 12rpx 20rpx; /* 内边距 */
+		border-radius: 5rpx; /* 圆角 */
+		cursor: pointer; /* 鼠标指针 */
+		flex: 1; /* 按钮均分宽度 */
+		transition: background 0.3s; /* 背景颜色过渡效果 */
+		margin: 5rpx; /* 按钮间距 */
+	}
+
+	.start-button {
+		background: #2979FF; /* 开始游戏按钮颜色 */
+	}
+
+	.start-button:hover {
+		background: #1E88E5; /* 悬停时变色 */
+	}
+
+	.close-button {
+		background: #FF5722; /* 关闭按钮颜色 */
+	}
+
+	.close-button:hover {
+		background: #E64A19; /* 悬停时变色 */
+	}
+
+	.guide-popup {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.8); /* 深色背景 */
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+	}
+
+	.guide-content {
+		background: white; /* 白色背景 */
+		padding: 30rpx; /* 增加内边距 */
+		border-radius: 20rpx; /* 圆角 */
+		text-align: center;
+		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.2); /* 阴影效果 */
+		max-width: 90%; /* 限制最大宽度 */
+	}
+
+	.guide-title {
+		font-size: 32rpx; /* 标题字体大小 */
+		font-weight: bold;
+		color: #2979FF; /* 主题颜色 */
+		margin-bottom: 15rpx; /* 底部间距 */
+	}
+
+	.guide-description {
+		font-size: 26rpx; /* 描述字体大小 */
+		color: #333; /* 深色文本 */
+		margin-bottom: 25rpx; /* 底部间距 */
+		line-height: 1.5; /* 行高 */
+	}
+
+	button {
+		background: #2979FF; /* 按钮背景颜色 */
+		color: white; /* 按钮文本颜色 */
+		border: none; /* 无边框 */
+		padding: 12rpx 20rpx; /* 内边距 */
+		border-radius: 5rpx; /* 圆角 */
+		cursor: pointer; /* 鼠标指针 */
+		margin: 5rpx; /* 按钮间距 */
+		transition: background 0.3s; /* 背景颜色过渡效果 */
+	}
+
+	button:hover {
+		background: #1E88E5; /* 悬停时变色 */
+	}
+	
+	.leaderboard {
+		background: #fff;
+		border-radius: 24rpx;
+		padding: 20rpx;
+		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+		margin-top: 20rpx;
+
+		.leaderboard-title {
+			font-size: 28rpx;
+			font-weight: bold;
+			margin-bottom: 10rpx;
+		}
+
+		.leaderboard-item {
+			font-size: 24rpx;
+			color: #333;
+			margin: 5rpx 0;
+		}
+	}
+
+	.skip-button {
+		background: #2979FF; /* 背景颜色 */
+		color: #FFFFFF; /* 字体颜色 */
+		padding: 10rpx 20rpx; /* 内边距 */
+		border-radius: 24rpx; /* 圆角 */
+		margin-top: 10rpx; /* 上边距 */
+		border: none; /* 无边框 */
+		cursor: pointer; /* 鼠标指针 */
+		transition: background 0.3s; /* 背景颜色过渡效果 */
+	}
+
+	.skip-button:hover {
+		background: #1E88E5; /* 悬停时变色 */
+	}
+
+	.help-button {
+		background: linear-gradient(135deg, #2979FF, #1E88E5); /* 渐变背景 */
+		color: white; /* 字体颜色 */
+		padding: 12rpx 24rpx; /* 内边距 */
+		border-radius: 30rpx; /* 圆角 */
+		border: none; /* 无边框 */
+		cursor: pointer; /* 鼠标指针 */
+		transition: background 0.3s, transform 0.2s; /* 背景颜色和缩放过渡效果 */
+		font-size: 28rpx; /* 字体大小 */
+		margin-top: 20rpx; /* 上边距 */
+	}
+
+	.help-button:hover {
+		background: linear-gradient(135deg, #1E88E5, #1565C0); /* 悬停时变色 */
+		transform: scale(1.05); /* 悬停时放大 */
+	}
+
+	.theme-switch {
+		position: fixed;
+		top: 40rpx;
+		right: 40rpx;
+		z-index: 100;
+		padding: 20rpx;
+		border-radius: 50%;
+		background: v-bind('isDarkMode ? "#333333" : "#FFFFFF"');
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+	}
+
+	.search-bar {
+		display: flex;
+		align-items: center;
+		gap: 12rpx;
+		background: #FFFFFF;
+		padding: 16rpx 24rpx;
+		border-radius: 100rpx;
+		margin: 20rpx 0;
+		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+		
+		input {
+			flex: 1;
+			font-size: 28rpx;
+			color: #333333;
+		}
+	}
+
+	.category-scroll {
+		margin: 20rpx 0;
+		white-space: nowrap;
+	}
+
+	.category-tags {
+		display: flex;
+		flex-wrap: nowrap;
+		gap: 16rpx;
+		padding: 20rpx;
+		overflow-x: auto;
+		
+		.category-tag {
+			padding: 12rpx 24rpx;
+			border-radius: 100rpx;
+			font-size: 26rpx;
+			background: #F5F5F5;
+			color: #666666;
+			white-space: nowrap;
+			transition: all 0.3s ease;
+			
+			&.active {
+				background: #2979FF;
+				color: #FFFFFF;
+				transform: scale(1.05);
+			}
+			
+			&:active {
+				transform: scale(0.95);
+			}
+		}
+	}
+
+	.back-to-top {
+		position: fixed;
+		right: 40rpx;
+		bottom: 120rpx;
+		width: 80rpx;
+		height: 80rpx;
+		border-radius: 50%;
+		background: #2979FF;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		opacity: v-bind('scrollTop > 300 ? 1 : 0');
+		transition: opacity 0.3s;
+	}
+
+	.loading-wrapper {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 20rpx;
+	}
+
+	.loading-spinner {
+		width: 60rpx;
+		height: 60rpx;
+		border: 4rpx solid #f3f3f3;
+		border-top: 4rpx solid #2979FF;
+		border-radius: 50%;
+		animation: spin 1s linear infinite;
+	}
+
+	.pull-tip {
+		text-align: center;
+		padding: 20rpx;
+		color: #666;
+		
+		.rotating {
+			animation: rotate 1s linear infinite;
+		}
+	}
+
+	@keyframes spin {
+		0% { transform: rotate(0deg); }
+		100% { transform: rotate(360deg); }
+	}
+
+	@keyframes rotate {
+		from { transform: rotate(0deg); }
+		to { transform: rotate(360deg); }
+	}
+
+	.recommended-section {
+		margin: 20rpx 0;
+		padding: 20rpx;
+		
+		.section-header {
+			margin-bottom: 20rpx;
+			
+			.title {
+				font-size: 32rpx;
+				font-weight: bold;
+				color: #333;
+			}
+			
+			.subtitle {
+				font-size: 24rpx;
+				color: #666;
+				margin-left: 10rpx;
+			}
+		}
+	}
+
+	.recommended-scroll {
+		white-space: nowrap;
+		
+		.recommended-games {
+			display: inline-flex;
+			gap: 20rpx;
+			padding: 10rpx;
+		}
+	}
+
+	.recommend-card {
+		background: #FFFFFF;
+		padding: 20rpx;
+		border-radius: 16rpx;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 10rpx;
+		
+		.game-icon {
+			width: 80rpx;
+			height: 80rpx;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+		
+		.game-name {
+			font-size: 28rpx;
+			color: #333;
+		}
+		
+		.match-rate {
+			font-size: 24rpx;
+			color: #2979FF;
+		}
+	}
+
+	.achievement-popup {
+		position: fixed;
+		top: 20%;
+		left: 50%;
+		transform: translateX(-50%);
+		background: rgba(0, 0, 0, 0.8);
+		padding: 20rpx 40rpx;
+		border-radius: 16rpx;
+		color: #FFFFFF;
+		animation: slideDown 0.3s ease-out;
+		z-index: 1000;
+		
+		.achievement-content {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 10rpx;
+		}
+		
+		.achievement-title {
+			font-size: 32rpx;
+			font-weight: bold;
+		}
+		
+		.achievement-name {
+			font-size: 28rpx;
+			color: #FFD700;
+		}
+		
+		.achievement-desc {
+			font-size: 24rpx;
+			opacity: 0.8;
+		}
+	}
+
+	@keyframes slideDown {
+		from {
+			transform: translate(-50%, -100%);
+			opacity: 0;
+		}
+		to {
+			transform: translate(-50%, 0);
+			opacity: 1;
+		}
+	}
+</style>
