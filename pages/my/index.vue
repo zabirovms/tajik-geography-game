@@ -1,11 +1,21 @@
 <template>
   <view class="my-page">
     <!-- 用户信息区域 -->
-    <view class="user-info" @tap="!userInfo.nickName && handleLogin()">
+    <view class="user-info">
       <image class="avatar" :src="userInfo.avatarUrl" mode="aspectFill"></image>
       <view class="info-right">
-        <text class="nickname">{{ userInfo.nickName || '点击登录' }}</text>
-        <text v-if="userInfo.nickName" class="user-id">ID: {{ userInfo.userId || '-' }}</text>
+        <!-- 未登录时显示登录按钮 -->
+        <button v-if="!userInfo.nickName" 
+                class="login-btn" 
+                open-type="getPhoneNumber" 
+                @getphonenumber="handleGetPhoneNumber">
+          点击登录
+        </button>
+        <!-- 已登录时显示用户信息 -->
+        <block v-else>
+          <text class="nickname">{{ userInfo.nickName }}</text>
+          <text class="user-id">ID: {{ userInfo.userId || '-' }}</text>
+        </block>
       </view>
       <uni-icons v-if="userInfo.nickName" type="right" size="16" color="#666"></uni-icons>
     </view>
@@ -47,6 +57,8 @@
 </template>
 
 <script>
+import { login } from '@/utils/request'; // 导入 login 方法
+
 export default {
   data() {
     return {
@@ -202,30 +214,101 @@ export default {
       })
     },
 
-    // 处理登录
-    async handleLogin() {
+    // 处理获取手机号
+    async handleGetPhoneNumber(e) {
       try {
-        uni.showLoading({ title: '登录中...' })
-        const { code } = await this.wxLogin()
-        const userInfo = await this.getUserInfo(code)
-        this.userInfo = userInfo
-        uni.setStorageSync('userInfo', JSON.stringify(userInfo))
-        uni.showToast({ title: '登录成功', icon: 'success' })
+        // 用户拒绝授权手机号
+        if (e.detail.errMsg !== "getPhoneNumber:ok") {
+          uni.showToast({
+            title: '需要授权手机号才能登录',
+            icon: 'none'
+          });
+          return;
+        }
+
+        // 先获取用户信息
+        uni.showModal({
+          title: '提示',
+          content: '需要获取您的头像和昵称',
+          success: async (res) => {
+            if (res.confirm) {
+              try {
+                uni.showLoading({ 
+                  title: '登录中...' 
+                });
+                
+                // 获取用户信息
+                const userProfile = await this.getUserProfile();
+                
+                // 获取登录凭证
+                const { code } = await this.wxLogin();
+
+                // 发送登录请求到后端
+                const response = await login({ 
+                  code,
+                  encryptedData: e.detail.encryptedData,
+                  iv: e.detail.iv,
+                  nickname: userProfile.nickName,
+                  avatarUrl: userProfile.avatarUrl
+                });
+
+                // 更新用户信息
+                this.userInfo = response;
+                uni.setStorageSync('userInfo', JSON.stringify(response));
+                
+                uni.showToast({ 
+                  title: '登录成功', 
+                  icon: 'success' 
+                });
+              } catch (error) {
+                console.error('登录错误:', error);
+                uni.showToast({ 
+                  title: error.message || '登录失败', 
+                  icon: 'none' 
+                });
+              } finally {
+                uni.hideLoading();
+              }
+            } else {
+              uni.showToast({
+                title: '您取消了授权',
+                icon: 'none'
+              });
+            }
+          }
+        });
       } catch (error) {
-        uni.showToast({ title: error.message || '登录失败', icon: 'none' })
-      } finally {
-        uni.hideLoading()
+        console.error('登录错误:', error);
+        uni.showToast({ 
+          title: error.message || '登录失败', 
+          icon: 'none' 
+        });
       }
     },
 
-    // 微信登录Promise化
+    // 获取用户信息
+    getUserProfile() {
+      return new Promise((resolve, reject) => {
+        uni.getUserProfile({
+          desc: '用于完善会员资料', // 声明获取用户个人信息后的用途
+          success: (res) => {
+            resolve(res.userInfo);
+          },
+          fail: (err) => {
+            reject(err);
+          }
+        });
+      });
+    },
+
+    // 微信登录
     wxLogin() {
       return new Promise((resolve, reject) => {
-        wx.login({
+        uni.login({
           success: res => resolve(res),
           fail: err => reject(err)
-        })
-      })
+        });
+      });
     },
 
     // 处理退出登录
@@ -259,7 +342,7 @@ export default {
           }
         }
       })
-    }
+    },
   }
 }
 </script>
@@ -292,27 +375,30 @@ export default {
   flex: 1;
 }
 
+.login-btn {
+  margin: 0;
+  padding: 0;
+  background: none;
+  font-size: 32rpx;
+  color: #333;
+  text-align: left;
+  line-height: 1.4;
+}
+
+.login-btn::after {
+  border: none;
+}
+
 .nickname {
   font-size: 32rpx;
   color: #333;
   margin-bottom: 10rpx;
 }
 
-.login-btn {
-  margin: 0;
-  padding: 0;
-  width: 160rpx;
-  height: 56rpx;
-  line-height: 56rpx;
+.user-id {
   font-size: 24rpx;
-  background: #2979FF;
-  color: #fff;
-  border-radius: 28rpx;
-  transition: background 0.3s;
-}
-
-.login-btn:hover {
-  background: #1e5bbf;
+  color: #999;
+  display: block;
 }
 
 .stats-section {

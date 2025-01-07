@@ -28,4 +28,10 @@ const request = async (url, method = 'GET', data = {}, headers = {}) => {
     }
 };
 
+// 登录方法
+const login = async (userData) => {
+  return await request('/api/wxlogin', 'POST', userData);
+};
+
 export default request; // 确保这里是直接导出 request 函数
+export { login }; // 导出 login 方法
