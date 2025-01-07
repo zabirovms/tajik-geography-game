@@ -1,44 +1,48 @@
 <template>
   <view class="my-page">
-    <!-- 用户信息区域 -->
-    <view class="user-info">
-      <image class="avatar" :src="userInfo.avatarUrl" mode="aspectFill"></image>
-      <view class="info-right">
-        <!-- 未登录时显示登录按钮 -->
-        <button v-if="!userInfo.nickName" 
-                class="login-btn" 
-                open-type="getPhoneNumber" 
-                @getphonenumber="handleGetPhoneNumber">
-          点击登录
-        </button>
-        <!-- 已登录时显示用户信息 -->
-        <block v-else>
-          <text class="nickname">{{ userInfo.nickName }}</text>
-          <text class="user-id">ID: {{ userInfo.userId || '-' }}</text>
-        </block>
+    <!-- 用户信息卡片 -->
+    <view class="user-card">
+      <view class="user-info">
+        <image class="avatar" :src="userInfo.avatarUrl" mode="aspectFill"></image>
+        <view class="info-right">
+          <!-- 未登录时显示登录按钮 -->
+          <button v-if="!userInfo.nickName" 
+                  class="login-btn" 
+                  open-type="getPhoneNumber" 
+                  @getphonenumber="handleGetPhoneNumber">
+            点击登录
+          </button>
+          <!-- 已登录时显示用户信息 -->
+          <block v-else>
+            <text class="nickname">{{ userInfo.nickName }}</text>
+            <text class="user-id">ID: {{ userInfo.userId || '-' }}</text>
+          </block>
+        </view>
       </view>
-      <uni-icons v-if="userInfo.nickName" type="right" size="16" color="#666"></uni-icons>
     </view>
 
-    <!-- 统计数据 -->
-    <view class="stats-section">
+    <!-- 统计数据卡片 -->
+    <view class="stats-card">
       <view class="stats-item">
         <text class="stats-num">{{ stats.totalGames || 0 }}</text>
         <text class="stats-label">总游戏数</text>
       </view>
+      <view class="divider"></view>
       <view class="stats-item">
         <text class="stats-num">{{ stats.correctRate || '0%' }}</text>
         <text class="stats-label">正确率</text>
       </view>
+      <view class="divider"></view>
       <view class="stats-item">
         <text class="stats-num">{{ stats.bestScore || 0 }}</text>
         <text class="stats-label">最高分</text>
       </view>
     </view>
 
-    <!-- 功能列表 -->
+    <!-- 功能菜单列表 -->
     <view class="menu-list">
-      <view class="menu-item" v-for="(item, index) in menuItems" 
+      <view class="menu-item" 
+            v-for="(item, index) in menuItems" 
             :key="index"
             @tap="handleMenuClick(item)">
         <view class="menu-item-left">
@@ -50,8 +54,8 @@
     </view>
 
     <!-- 退出登录按钮 -->
-    <view v-if="userInfo.nickName" class="logout-btn" @tap="handleLogout">
-      退出登录
+    <view v-if="userInfo.nickName" class="logout-section">
+      <button class="logout-btn" @tap="handleLogout">退出登录</button>
     </view>
   </view>
 </template>
@@ -351,36 +355,41 @@ export default {
 .my-page {
   min-height: 100vh;
   background-color: #f5f7fa;
-  padding: 20rpx; /* 添加内边距 */
+  padding: 30rpx 20rpx;
+}
+
+/* 用户信息卡片样式 */
+.user-card {
+  background: linear-gradient(135deg, #6b73ff 0%, #000dff 100%);
+  border-radius: 20rpx;
+  padding: 40rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  padding: 40rpx;
-  background: #fff;
-  margin-bottom: 20rpx;
-  border-radius: 12rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
 }
 
 .avatar {
   width: 120rpx;
   height: 120rpx;
   border-radius: 60rpx;
-  margin-right: 30rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.3);
 }
 
 .info-right {
   flex: 1;
+  margin-left: 30rpx;
 }
 
 .login-btn {
   margin: 0;
   padding: 0;
   background: none;
-  font-size: 32rpx;
-  color: #333;
+  font-size: 36rpx;
+  color: #ffffff;
   text-align: left;
   line-height: 1.4;
 }
@@ -390,75 +399,72 @@ export default {
 }
 
 .nickname {
-  font-size: 32rpx;
-  color: #333;
+  font-size: 36rpx;
+  color: #ffffff;
+  font-weight: 500;
   margin-bottom: 10rpx;
+  display: block;
 }
 
 .user-id {
   font-size: 24rpx;
-  color: #999;
-  display: block;
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.stats-section {
+/* 统计卡片样式 */
+.stats-card {
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
   display: flex;
-  justify-content: space-around;
-  padding: 30rpx 0;
-  background: #fff;
-  margin-bottom: 20rpx;
-  border-radius: 12rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
 }
 
 .stats-item {
+  flex: 1;
   text-align: center;
 }
 
+.divider {
+  width: 2rpx;
+  height: 50rpx;
+  background-color: #eee;
+}
+
 .stats-num {
-  display: block;
-  font-size: 36rpx;
-  color: #2979FF;
+  font-size: 40rpx;
+  color: #333;
   font-weight: bold;
   margin-bottom: 10rpx;
+  display: block;
 }
 
 .stats-label {
   font-size: 24rpx;
-  color: #666;
+  color: #999;
 }
 
+/* 菜单列表样式 */
 .menu-list {
-  background: #fff;
-  border-radius: 12rpx;
+  background: #ffffff;
+  border-radius: 20rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
 }
 
 .menu-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 30rpx 40rpx;
-  border-bottom: 1rpx solid #eee;
-  transition: background 0.3s;
-}
-
-.menu-item:hover {
-  background: #f0f0f0;
-}
-
-.menu-text {
-  font-size: 28rpx;
-  color: #333;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f5f5f5;
 }
 
 .menu-item:last-child {
   border-bottom: none;
-}
-
-.user-id {
-  font-size: 24rpx;
-  color: #999;
-  margin-top: 6rpx;
 }
 
 .menu-item-left {
@@ -467,30 +473,29 @@ export default {
   gap: 20rpx;
 }
 
-.logout-btn {
-  margin: 40rpx 20rpx;
-  height: 80rpx;
-  line-height: 80rpx;
-  text-align: center;
-  background: #fff;
-  color: #ff4444;
-  border-radius: 12rpx;
+.menu-text {
   font-size: 28rpx;
+  color: #333;
 }
 
-// 添加加载状态样式
-.loading {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+/* 退出登录按钮样式 */
+.logout-section {
+  margin: 60rpx 30rpx;
 }
 
-// 添加刷新提示样式
-.refresh-tip {
+.logout-btn {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
   text-align: center;
-  padding: 20rpx;
-  color: #999;
-  font-size: 24rpx;
+  background: #ffffff;
+  color: #ff4444;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+}
+
+.logout-btn::after {
+  border: none;
 }
 </style> 
