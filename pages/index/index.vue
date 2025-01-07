@@ -122,6 +122,15 @@
 					</view>
 					<text class="game-bonus">首次通关奖励：{{game.rewards.firstWin}}积分</text>
 				</view>
+				<view class="card-actions">
+					<button class="action-btn favorite" @tap.stop="toggleFavorite(game.key)">
+						<uni-icons :type="isFavorite(game.key) ? 'star-filled' : 'star'" size="24" 
+								 :color="isFavorite(game.key) ? '#FFD700' : '#999'"></uni-icons>
+					</button>
+					<text class="last-played" v-if="game.lastPlayed">
+						上次游玩: {{formatDate(game.lastPlayed)}}
+					</text>
+				</view>
 			</view>
 		</view>
 
@@ -395,7 +404,9 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 				pullText: '下拉刷新',
 				recommendedGames: [],
 				showAchievement: false,
-				newAchievement: null
+				newAchievement: null,
+				favoriteGames: [],
+				recentGames: []
 			}
 		},
 		created() {
@@ -692,19 +703,36 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 				this.filterByCategory('全部');
 			},
 			generateRecommendations() {
-				// 基于用户历史记录和偏好生成推荐
-				const userHistory = uni.getStorageSync('gameHistory') || [];
-				const userPreferences = uni.getStorageSync('userPreferences') || {};
-				
-				// 实现推荐算法...
-				this.recommendedGames = Object.entries(this.games)
-					.map(([key, game]) => ({
-						...game,
-						key,
-						matchRate: this.calculateMatchRate(game, userHistory, userPreferences)
-					}))
+				const recommendations = Object.entries(this.games)
+					.map(([key, game]) => {
+						// 计算推荐分数
+						let score = 0;
+						
+						// 根据收藏加分
+						if (this.isFavorite(key)) score += 3;
+						
+						// 根据最近游玩时间加分
+						const recentGame = this.recentGames.find(g => g.key === key);
+						if (recentGame) {
+							const daysSinceLastPlayed = (new Date() - new Date(recentGame.lastPlayed)) / 86400000;
+							score += Math.max(0, 5 - daysSinceLastPlayed);
+						}
+						
+						// 根据难度匹配用户水平加分
+						const userLevel = this.getUserLevel();
+						const difficultyMatch = Math.abs(userLevel - game.modes[0].difficulty);
+						score += (3 - difficultyMatch);
+						
+						return {
+							...game,
+							key,
+							matchRate: Math.min(100, Math.round(score * 20)) // 将分数转换为百分比
+						};
+					})
 					.sort((a, b) => b.matchRate - a.matchRate)
 					.slice(0, 3);
+					
+				this.recommendedGames = recommendations;
 			},
 			showAchievementPopup(achievement) {
 				this.newAchievement = achievement;
@@ -713,6 +741,87 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 				setTimeout(() => {
 					this.showAchievement = false;
 				}, 3000);
+			},
+			toggleFavorite(gameKey) {
+				const index = this.favoriteGames.indexOf(gameKey);
+				if (index > -1) {
+					this.favoriteGames.splice(index, 1);
+					uni.showToast({ title: '已取消收藏', icon: 'none' });
+				} else {
+					this.favoriteGames.push(gameKey);
+					uni.showToast({ title: '已收藏', icon: 'success' });
+				}
+				// 保存到本地存储
+				uni.setStorageSync('favoriteGames', this.favoriteGames);
+			},
+			
+			isFavorite(gameKey) {
+				return this.favoriteGames.includes(gameKey);
+			},
+			updateGameHistory(gameKey) {
+				const now = new Date();
+				const gameIndex = this.recentGames.findIndex(g => g.key === gameKey);
+				
+				if (gameIndex > -1) {
+					this.recentGames[gameIndex].lastPlayed = now;
+				} else {
+					this.recentGames.push({
+						key: gameKey,
+						lastPlayed: now
+					});
+				}
+				
+				// 只保留最近的10条记录
+				this.recentGames = this.recentGames
+					.sort((a, b) => b.lastPlayed - a.lastPlayed)
+					.slice(0, 10);
+					
+				// 保存到本地存储
+				uni.setStorageSync('recentGames', this.recentGames);
+			},
+			
+			formatDate(date) {
+				const d = new Date(date);
+				const now = new Date();
+				const diff = now - d;
+				
+				if (diff < 86400000) { // 24小时内
+					return '今天';
+				} else if (diff < 172800000) { // 48小时内
+					return '昨天';
+				} else {
+					return `${d.getMonth() + 1}月${d.getDate()}日`;
+				}
+			},
+			async initData() {
+				try {
+					// 从本地存储加载数据
+					const favoriteGames = uni.getStorageSync('favoriteGames') || [];
+					const recentGames = uni.getStorageSync('recentGames') || [];
+					const userPreferences = uni.getStorageSync('userPreferences') || {};
+					
+					this.favoriteGames = favoriteGames;
+					this.recentGames = recentGames;
+					
+					// 生成推荐
+					this.generateRecommendations();
+					
+					// 初始化游戏列表
+					this.initGamesList();
+					
+				} catch (error) {
+					console.error('初始化数据失败:', error);
+					uni.showToast({
+						title: '加载数据失败',
+						icon: 'none'
+					});
+				}
+			},
+			// 添加获取用户等级的方法
+			getUserLevel() {
+				// 这里可以根据实际需求计算用户等级
+				// 暂时返回默认值 1 (初级)
+				return 1;
 			}
 		},
 		// 添加监听器以便调试
@@ -741,6 +850,10 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 				query: '',
 				imageUrl: '' // 可选，分享显示的图片链接
 			}
+		},
+		// 在页面加载时初始化数据
+		onLoad() {
+			this.initData();
 		}
 	}
 </script>
@@ -1565,6 +1678,35 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 		to {
 			transform: translate(-50%, 0);
 			opacity: 1;
+		}
+	}
+
+	.card-actions {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-top: 16rpx;
+		padding-top: 16rpx;
+		border-top: 1rpx solid rgba(0,0,0,0.1);
+		
+		.action-btn {
+			background: none;
+			border: none;
+			padding: 0;
+			margin: 0;
+			line-height: 1;
+			
+			&.favorite {
+				transition: transform 0.2s;
+				&:active {
+					transform: scale(1.2);
+				}
+			}
+		}
+		
+		.last-played {
+			font-size: 24rpx;
+			color: #999;
 		}
 	}
 </style>
