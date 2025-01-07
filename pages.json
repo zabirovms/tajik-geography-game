@@ -3,7 +3,9 @@
 		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "地理知识挑战"
+				"navigationBarTitleText": "地理知识挑战",
+				"enableShareAppMessage": true,
+				"enableShareTimeline": true
 			}
 		},
 		{

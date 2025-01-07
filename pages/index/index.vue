@@ -432,41 +432,25 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 			},
 			async shareContent() {
 				try {
-					// 生成海报
 					const posterUrl = await this.generatePoster();
 					
-					// 显示分享操作菜单
 					uni.showActionSheet({
 						itemList: ['分享给好友', '转发到朋友圈', '保存海报到相册'],
 						success: (res) => {
 							switch (res.tapIndex) {
-								case 0:
-									uni.showToast({
-										title: '请点击右上角分享',
-										icon: 'none'
-									});
-									break;
-								case 1:
-									// 转发到朋友圈
-									if (wx.updateTimelineShareData) {
-										wx.updateTimelineShareData({
-											title: '地理知识挑战',
-											query: '',
-											imageUrl: posterUrl,
-											success: () => {
-												uni.showToast({
-													title: '请点击右上角转发到朋友圈',
-													icon: 'none'
-												});
-											}
-										});
-									} else {
-										uni.showToast({
-											title: '当前环境不支持转发到朋友圈',
-											icon: 'none'
-										});
-									}
-									break;
+                       case 0:
+            uni.showToast({
+              title: '请点击右上角分享',
+              icon: 'none'
+            });
+            break;
+          case 1:
+            // 分享到朋友圈
+            uni.showToast({
+              title: '请点击右上角"分享到朋友圈"',
+              icon: 'none'
+            });
+			 break;
 								case 2:
 									this.savePoster(posterUrl);
 									break;
@@ -891,20 +875,19 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 			}
 		},
 		// 添加小程序分享方法
-		onShareAppMessage() {
+		onShareAppMessage(res) {
 			return {
 				title: '地理知识挑战',
-				desc: '来挑战你的地理知识吧！',
 				path: '/pages/index/index',
-				imageUrl: '' // 可选，分享显示的图片链接
+				imageUrl: this.posterUrl || ''
 			}
 		},
-		// 如果需要分享到朋友圈，还可以添加
+		// 分享到朋友圈
 		onShareTimeline() {
 			return {
 				title: '地理知识挑战',
 				query: '',
-				imageUrl: '' // 可选，分享显示的图片链接
+				imageUrl: this.posterUrl || ''
 			}
 		},
 		// 在页面加载时初始化数据
