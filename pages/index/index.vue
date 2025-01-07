@@ -205,9 +205,19 @@
 				<text class="achievement-desc">{{newAchievement.description}}</text>
 			</view>
 		</view>
+
+		<!-- 用于生成海报的画布（设置为不可见） -->
+		<canvas 
+			canvas-id="posterCanvas" 
+			:style="{
+				width: '750px',
+				height: '1334px',
+				position: 'fixed',
+				left: '-9999px'
+			}"
+		></canvas>
 	</view>
 </template>
-
 <script>
 import Help from '../help/help.vue'; // 导入帮助中心组件
 	export default {
@@ -409,35 +419,112 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 						url
 					})
 			},
-			shareContent() {
-				// 小程序分享功能
-				if (typeof uni.share === 'function') {
-					uni.share({
-						provider: 'weixin', // 分享到微信
-						scene: 'WXSceneSession', // 分享到微信好友
-						title: '地理知识挑战',
-						summary: '来挑战你的地理知识吧！',
-						imageUrl: '', // 可选，分享的图片
-						href: 'https://yourwebsite.com', // 分享链接
-						success: () => {
-							uni.showToast({
-								title: '分享成功',
-								icon: 'success',
-								duration: 2000
-							});
-						},
-						fail: (err) => {
-							console.error('分享失败', err);
-							uni.showToast({
-								title: '分享失败，请重试',
-								icon: 'none',
-								duration: 2000
-							});
+			async shareContent() {
+				try {
+					// 生成海报
+					const posterUrl = await this.generatePoster();
+					
+					// 显示分享操作菜单
+					uni.showActionSheet({
+						itemList: ['分享给好友', '保存海报'],
+						success: (res) => {
+							switch (res.tapIndex) {
+								case 0:
+									uni.showToast({
+										title: '请点击右上角分享',
+										icon: 'none'
+									});
+									break;
+								case 1:
+									this.savePoster(posterUrl);
+									break;
+							}
 						}
 					});
-				} else {
-					console.error('分享功能不可用');
+				} catch (error) {
+					uni.showToast({
+						title: '生成海报失败',
+						icon: 'none'
+					});
+					console.error('生成海报失败:', error);
 				}
+			},
+
+			// 生成海报
+			generatePoster() {
+				return new Promise((resolve, reject) => {
+					const ctx = uni.createCanvasContext('posterCanvas');
+					
+					// 设置画布大小
+					const canvasWidth = 750;
+					const canvasHeight = 1334;
+					
+					// 绘制背景
+					ctx.setFillStyle('#FFFFFF');
+					ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+					
+					// 绘制标题
+					ctx.setFontSize(48);
+					ctx.setFillStyle('#333333');
+					ctx.setTextAlign('center');
+					ctx.fillText('地理知识挑战', canvasWidth/2, 200);
+					
+					// 绘制描述
+					ctx.setFontSize(32);
+					ctx.setFillStyle('#666666');
+					ctx.fillText('测试你的地理知识，挑战高分！', canvasWidth/2, 300);
+					
+					// 绘制统计数据
+					this.statsData.forEach((stat, index) => {
+						const y = 500 + index * 100;
+						ctx.setFontSize(40);
+						ctx.setFillStyle('#2979FF');
+						ctx.fillText(stat.value, canvasWidth/2, y);
+						
+						ctx.setFontSize(28);
+						ctx.setFillStyle('#666666');
+						ctx.fillText(stat.label, canvasWidth/2, y + 40);
+					});
+					
+					// 绘制二维码（如果有）
+					// ctx.drawImage('qrcode.png', canvasWidth/2 - 100, 900, 200, 200);
+					
+					// 绘制底部文字
+					ctx.setFontSize(24);
+					ctx.setFillStyle('#999999');
+					ctx.fillText('长按识别二维码，开始你的地理知识之旅', canvasWidth/2, 1200);
+					
+					// 执行绘制
+					ctx.draw(false, () => {
+						// 将画布内容转换为图片
+						uni.canvasToTempFilePath({
+							canvasId: 'posterCanvas',
+							success: (res) => {
+								resolve(res.tempFilePath);
+							},
+							fail: reject
+						});
+					});
+				});
+			},
+
+			// 保存海报到相册
+			savePoster(posterUrl) {
+				uni.saveImageToPhotosAlbum({
+					filePath: posterUrl,
+					success: () => {
+						uni.showToast({
+							title: '海报已保存到相册',
+							icon: 'success'
+						});
+					},
+					fail: () => {
+						uni.showToast({
+							title: '保存失败，请检查权限',
+							icon: 'none'
+						});
+					}
+				});
 			},
 			showGameDetails(gameKey) {
 				this.selectedGame = this.games[gameKey];
@@ -636,6 +723,23 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 			
 			filteredGames(newVal) {
 				console.log('Filtered games updated:', newVal);
+			}
+		},
+		// 添加小程序分享方法
+		onShareAppMessage() {
+			return {
+				title: '地理知识挑战',
+				desc: '来挑战你的地理知识吧！',
+				path: '/pages/index/index',
+				imageUrl: '' // 可选，分享显示的图片链接
+			}
+		},
+		// 如果需要分享到朋友圈，还可以添加
+		onShareTimeline() {
+			return {
+				title: '地理知识挑战',
+				query: '',
+				imageUrl: '' // 可选，分享显示的图片链接
 			}
 		}
 	}
