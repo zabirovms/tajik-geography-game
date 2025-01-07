@@ -68,7 +68,7 @@ export default {
     return {
       userInfo: {
         nickName: '',
-        avatarUrl: '/static/images/default-avatar.png',
+        avatarUrl: '/static/images/default-avatar.jpg',
         userId: ''
       },
       stats: {
@@ -339,10 +339,13 @@ export default {
       uni.showModal({
         title: '提示',
         content: '请先登录',
-        confirmText: '去登录',
         success: (res) => {
           if (res.confirm) {
-            this.handleLogin()
+            // 不做任何操作，让用户直接点击页面上的"点击登录"按钮
+            uni.showToast({
+              title: '请点击页面上的"点击登录"按钮',
+              icon: 'none'
+            })
           }
         }
       })
