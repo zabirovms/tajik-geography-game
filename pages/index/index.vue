@@ -116,9 +116,9 @@
 						<text class="mode-tag" v-for="mode in game.modes" :key="mode.name">
 							{{mode.name}}
 						</text>
-						<text class="difficulty">难度: {{'★'.repeat(game.modes[0].difficulty)}}{{
-							'☆'.repeat(3-game.modes[0].difficulty)
-						}}</text>
+						<view class="difficulty-tag" :class="getDifficultyClass(game.modes[0].difficulty)">
+							难度: {{'★'.repeat(game.modes[0].difficulty)}}{{'☆'.repeat(3-game.modes[0].difficulty)}}
+						</view>
 					</view>
 					<text class="game-bonus">首次通关奖励：{{game.rewards.firstWin}}积分</text>
 				</view>
@@ -822,6 +822,11 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 				// 这里可以根据实际需求计算用户等级
 				// 暂时返回默认值 1 (初级)
 				return 1;
+			},
+			getDifficultyClass(difficulty) {
+				if (difficulty <= 1) return 'easy';
+				if (difficulty === 2) return 'medium';
+				return 'hard';
 			}
 		},
 		// 添加监听器以便调试
@@ -901,14 +906,20 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 		display: flex;
 		align-items: flex-start;
 		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
-		transition: all 0.3s ease;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		position: relative;
 		overflow: hidden;
 		opacity: 0;
+		transform: translateY(20rpx);
 		
-		@for $i from 1 through 6 {
+		&.show {
+			opacity: 1;
+			transform: translateY(0);
+		}
+		
+		@for $i from 1 through 10 {
 			&:nth-child(#{$i}) {
-				animation: gameCardIn 0.6s ease-out forwards;
+				animation: slideIn 0.3s ease forwards;
 				animation-delay: #{$i * 0.1}s;
 			}
 		}
@@ -928,12 +939,25 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 			background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
 			pointer-events: none;
 		}
+		
+		&:hover, &.hover {
+			transform: translateY(-4rpx);
+			box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.12);
+			
+			.icon-wrapper {
+				transform: scale(1.05);
+			}
+		}
+		
+		.icon-wrapper {
+			transition: transform 0.3s ease;
+		}
 	}
 
-	@keyframes gameCardIn {
+	@keyframes slideIn {
 		from {
 			opacity: 0;
-			transform: translateY(30rpx);
+			transform: translateY(20rpx);
 		}
 		to {
 			opacity: 1;
@@ -1006,9 +1030,17 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 		.mode-tag {
 			font-size: 24rpx;
 			color: #2979FF;
-			background: rgba(41, 121, 255, 0.1);
+			background: linear-gradient(135deg, rgba(41, 121, 255, 0.1), rgba(41, 121, 255, 0.2));
+			border: 1px solid rgba(41, 121, 255, 0.2);
+			backdrop-filter: blur(5px);
 			padding: 6rpx 16rpx;
 			border-radius: 100rpx;
+			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+			
+			&:hover {
+				transform: translateY(-2rpx);
+				box-shadow: 0 2rpx 8rpx rgba(41, 121, 255, 0.2);
+			}
 		}
 		
 		.difficulty {
@@ -1489,6 +1521,12 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 	.category-scroll {
 		margin: 20rpx 0;
 		white-space: nowrap;
+		scroll-behavior: smooth;
+		-webkit-overflow-scrolling: touch;
+		
+		&::-webkit-scrollbar {
+			display: none;
+		}
 	}
 
 	.category-tags {
@@ -1505,12 +1543,13 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 			background: #F5F5F5;
 			color: #666666;
 			white-space: nowrap;
-			transition: all 0.3s ease;
+			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 			
 			&.active {
 				background: #2979FF;
 				color: #FFFFFF;
 				transform: scale(1.05);
+				font-weight: bold;
 			}
 			
 			&:active {
@@ -1543,6 +1582,12 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 		flex-direction: column;
 		align-items: center;
 		gap: 20rpx;
+		opacity: 0;
+		transition: opacity 0.3s ease;
+		
+		&.show {
+			opacity: 1;
+		}
 	}
 
 	.loading-spinner {
@@ -1551,7 +1596,7 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 		border: 4rpx solid #f3f3f3;
 		border-top: 4rpx solid #2979FF;
 		border-radius: 50%;
-		animation: spin 1s linear infinite;
+		animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 	}
 
 	.pull-tip {
@@ -1565,8 +1610,9 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 	}
 
 	@keyframes spin {
-		0% { transform: rotate(0deg); }
-		100% { transform: rotate(360deg); }
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	@keyframes rotate {
@@ -1707,6 +1753,28 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 		.last-played {
 			font-size: 24rpx;
 			color: #999;
+		}
+	}
+
+	.difficulty-tag {
+		font-size: 24rpx;
+		padding: 4rpx 12rpx;
+		border-radius: 100rpx;
+		margin-left: auto;
+		
+		&.easy {
+			color: #34C759;
+			background: rgba(52, 199, 89, 0.1);
+		}
+		
+		&.medium {
+			color: #FF9500;
+			background: rgba(255, 149, 0, 0.1);
+		}
+		
+		&.hard {
+			color: #FF3B30;
+			background: rgba(255, 59, 48, 0.1);
 		}
 	}
 </style>
