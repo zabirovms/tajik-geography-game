@@ -437,7 +437,7 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 					
 					// 显示分享操作菜单
 					uni.showActionSheet({
-						itemList: ['分享给好友', '保存海报'],
+						itemList: ['分享给好友', '转发到朋友圈', '保存海报到相册'],
 						success: (res) => {
 							switch (res.tapIndex) {
 								case 0:
@@ -447,6 +447,27 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 									});
 									break;
 								case 1:
+									// 转发到朋友圈
+									if (wx.updateTimelineShareData) {
+										wx.updateTimelineShareData({
+											title: '地理知识挑战',
+											query: '',
+											imageUrl: posterUrl,
+											success: () => {
+												uni.showToast({
+													title: '请点击右上角转发到朋友圈',
+													icon: 'none'
+												});
+											}
+										});
+									} else {
+										uni.showToast({
+											title: '当前环境不支持转发到朋友圈',
+											icon: 'none'
+										});
+									}
+									break;
+								case 2:
 									this.savePoster(posterUrl);
 									break;
 							}
@@ -520,22 +541,52 @@ import Help from '../help/help.vue'; // 导入帮助中心组件
 			},
 
 			// 保存海报到相册
-			savePoster(posterUrl) {
-				uni.saveImageToPhotosAlbum({
-					filePath: posterUrl,
-					success: () => {
-						uni.showToast({
-							title: '海报已保存到相册',
-							icon: 'success'
-						});
-					},
-					fail: () => {
-						uni.showToast({
-							title: '保存失败，请检查权限',
-							icon: 'none'
-						});
+			async savePoster(posterUrl) {
+				try {
+					// 先获取相册授权
+					const auth = await this.getPhotoAuth();
+					if (!auth) {
+						throw new Error('未获得相册权限');
 					}
-				});
+					
+					// 获得授权后保存图片
+					await uni.saveImageToPhotosAlbum({
+						filePath: posterUrl
+					});
+					
+					uni.showToast({
+						title: '海报已保存到相册',
+						icon: 'success'
+					});
+					
+				} catch (error) {
+					uni.showToast({
+						title: error.message || '保存失败',
+						icon: 'none'
+					});
+				}
+			},
+
+			// 获取相册授权方法
+			async getPhotoAuth() {
+				try {
+					const res = await uni.authorize({
+						scope: 'scope.writePhotosAlbum'
+					});
+					return true;
+				} catch (error) {
+					// 用户拒绝授权,引导用户去开启
+					const confirm = await uni.showModal({
+						title: '提示',
+						content: '需要您授权保存图片到相册',
+						confirmText: '去设置'
+					});
+					
+					if (confirm.confirm) {
+						uni.openSetting();
+					}
+					return false;
+				}
 			},
 			showGameDetails(gameKey) {
 				this.selectedGame = this.games[gameKey];
