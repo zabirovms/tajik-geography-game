@@ -271,7 +271,11 @@ export function generateShapesQuestion(countries, gameMode = 'country-to-shape')
     region: selectedCountry.region,
     continent: continentNamesTajik[selectedCountry.region] || selectedCountry.region,
     gameMode: gameMode,
-    type: 'shapes'
+    type: 'shapes',
+    // Format for GameContainer compatibility
+    question: `${selectedCountry.localizedName}-ро дар харита пайдо кунед`,
+    options: ['Дар харитаро зер кунед'], // Single option since this is map-based
+    correctAnswer: 0
   }
 }
 

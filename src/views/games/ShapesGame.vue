@@ -4,6 +4,7 @@
       :game-state="gameState"
       :score="score"
       :question="currentQuestion"
+      :questions="questions"
       :feedback="feedback"
       :time-left="timeLeft"
       :game-mode="gameMode"
