@@ -7,6 +7,8 @@
     "preview": "vite preview --host 0.0.0.0 --port 5000"
   },
   "dependencies": {
+    "@amcharts/amcharts5": "^5.13.6",
+    "@amcharts/amcharts5-geodata": "^5.1.5",
     "serve": "^14.2.5",
     "vue": "^3.4.0",
     "vue-router": "^4.0.0"

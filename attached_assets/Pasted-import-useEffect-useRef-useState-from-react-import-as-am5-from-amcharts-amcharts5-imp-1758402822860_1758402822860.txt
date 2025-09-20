@@ -1,0 +1,718 @@
+import { useEffect, useRef, useState } from "react";
+import * as am5 from "@amcharts/amcharts5";
+import * as am5map from "@amcharts/amcharts5/map";
+import am5geodata_worldLow from "@amcharts/amcharts5-geodata/worldLow";
+import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
+import { Button } from "@/components/ui/button";
+import { Globe, Map } from "lucide-react";
+
+interface Continent {
+  id: string;
+  name: string;
+  nameTajik: string;
+  color: string;
+  countries: string[]; // ISO country codes
+}
+
+// Country names in Tajik language
+const countryNamesTajik: Record<string, string> = {
+  "AF": "Афғонистон",
+  "AL": "Албания", 
+  "DZ": "Алҷазоир",
+  "AD": "Андорра",
+  "AO": "Ангола",
+  "AR": "Аргентина",
+  "AM": "Арманистон",
+  "AU": "Австралия",
+  "AT": "Австрия",
+  "AZ": "Озарбойҷон",
+  "BS": "Багама",
+  "BH": "Баҳрайн",
+  "BD": "Бангладеш",
+  "BB": "Барбадос",
+  "BY": "Белорус",
+  "BE": "Белгия",
+  "BZ": "Белиз",
+  "BJ": "Бенин",
+  "BT": "Бутан",
+  "BO": "Боливия",
+  "BA": "Босния ва Ҳерсеговина",
+  "BW": "Ботсвана",
+  "BR": "Бразилия",
+  "BN": "Бруней",
+  "BG": "Болгария",
+  "BF": "Буркина-Фасо",
+  "BI": "Бурунди",
+  "KH": "Камбоҷа",
+  "CM": "Камерун",
+  "CA": "Канада",
+  "CV": "Кабо-Верде",
+  "KY": "Кайман",
+  "CF": "Ҷумҳурии Африқои Марказӣ",
+  "TD": "Чад",
+  "CL": "Чилӣ",
+  "CN": "Чин",
+  "CO": "Колумбия",
+  "KM": "Комор",
+  "CG": "Конго",
+  "CD": "Ҷумҳурии Демократии Конго",
+  "CK": "Ҷазираҳои Кук",
+  "CR": "Коста-Рика",
+  "HR": "Хорватия",
+  "CU": "Куба",
+  "CY": "Кипр",
+  "CZ": "Чехия",
+  "DK": "Дания",
+  "DJ": "Ҷибутӣ",
+  "DM": "Доминика",
+  "DO": "Ҷумҳурии Доминика",
+  "EC": "Эквадор",
+  "EG": "Миср",
+  "SV": "Салвадор",
+  "GQ": "Гвинеяи Экваторӣ",
+  "ER": "Эритрея",
+  "EE": "Эстония",
+  "SZ": "Эсватини",
+  "ET": "Эфиопия",
+  "FJ": "Фиҷӣ",
+  "FI": "Финландия",
+  "FR": "Фаронса",
+  "GA": "Габон",
+  "GM": "Гамбия",
+  "GE": "Гурҷистон",
+  "DE": "Олмон",
+  "GH": "Гана",
+  "GR": "Юнон",
+  "GD": "Гренада",
+  "GT": "Гватемала",
+  "GN": "Гвинея",
+  "GW": "Гвинея-Бисау",
+  "GY": "Гайана",
+  "HT": "Ҳаитӣ",
+  "HN": "Ҳондурас",
+  "HU": "Маҷористон",
+  "IS": "Исландия",
+  "IN": "Ҳиндустон",
+  "ID": "Индонезия",
+  "IR": "Эрон",
+  "IQ": "Ироқ",
+  "IE": "Ирландия",
+  "IL": "Фаластин",
+  "IT": "Италия",
+  "CI": "Кот-д'Ивуар",
+  "JM": "Ямайка",
+  "JP": "Япония",
+  "JO": "Урдун",
+  "KZ": "Қазоқистон",
+  "KE": "Кения",
+  "KI": "Кирибати",
+  "KP": "Кореяи Шимолӣ",
+  "KR": "Кореяи Ҷанубӣ",
+  "KW": "Кувайт",
+  "KG": "Қирғизистон",
+  "LA": "Лаос",
+  "LV": "Латвия",
+  "LB": "Лубнон",
+  "LS": "Лесото",
+  "LR": "Либерия",
+  "LY": "Либия",
+  "LI": "Лихтенштейн",
+  "LT": "Литва",
+  "LU": "Люксембург",
+  "MO": "Макао",
+  "MK": "Македонияи Шимолӣ",
+  "MG": "Мадагаскар",
+  "MW": "Малавӣ",
+  "MY": "Малайзия",
+  "ML": "Мали",
+  "MT": "Малта",
+  "MH": "Ҷазираҳои Маршалл",
+  "MQ": "Мартиника",
+  "MR": "Мавритания",
+  "MU": "Маврикий",
+  "YT": "Майот",
+  "MX": "Мексика",
+  "FM": "Микронезия",
+  "MD": "Молдова",
+  "MC": "Монако",
+  "MN": "Муғулистон",
+  "ME": "Монтенегро",
+  "MS": "Монтсеррат",
+  "MA": "Марокаш",
+  "MZ": "Мозамбик",
+  "MM": "Мянмар",
+  "NA": "Намибия",
+  "NR": "Нору",
+  "NP": "Непал",
+  "NL": "Нидерланд",
+  "NZ": "Зеландияи Нав",
+  "NI": "Никарагуа",
+  "NE": "Нигер",
+  "NG": "Нигерия",
+  "NO": "Норвегия",
+  "OM": "Уммон",
+  "PK": "Покистон",
+  "PW": "Палау",
+  "PA": "Панама",
+  "PG": "Папуа-Гвинеяи Нав",
+  "PY": "Парагвай",
+  "PE": "Перу",
+  "PH": "Филиппин",
+  "PL": "Полша",
+  "PT": "Португалия",
+  "QA": "Қатар",
+  "RO": "Руминия",
+  "RU": "Русия",
+  "RW": "Руанда",
+  "KN": "Сент-Китс ва Невис",
+  "LC": "Сент-Люсия",
+  "VC": "Сент-Винсент ва Гренадин",
+  "WS": "Самоа",
+  "SM": "Сан-Марино",
+  "ST": "Сао Томе ва Принсипе",
+  "SA": "Арабистони Саудӣ",
+  "SN": "Сенегал",
+  "RS": "Сербия",
+  "SC": "Сейшелҳо",
+  "SL": "Серра-Леоне",
+  "SG": "Сингапур",
+  "SK": "Словакия",
+  "SI": "Словения",
+  "SO": "Сомалӣ",
+  "ZA": "Африқои Ҷанубӣ",
+  "SS": "Судани Ҷанубӣ",
+  "ES": "Испания",
+  "LK": "Шри-Ланка",
+  "SD": "Судан",
+  "SR": "Суринам",
+  "SJ": "Свалбард ва Ян Майен",
+  "SE": "Шветсия",
+  "SY": "Сурия",
+  "TW": "Тайван",
+  "TJ": "Тоҷикистон",
+  "TZ": "Танзания",
+  "TH": "Таиланд",
+  "TL": "Тимор-Лесте",
+  "TG": "Того",
+  "TK": "Токелау",
+  "TO": "Тонга",
+  "TT": "Тринтидад ва Тобаго",
+  "TN": "Тунис",
+  "TR": "Туркия",
+  "TM": "Туркманистон",
+  "TC": "Ҷазираҳои Турк ва Кайкос",
+  "TV": "Тувалу",
+  "UG": "Уганда",
+  "UA": "Украина",
+  "AE": "Имороти Муттаҳидаи Араб",
+  "GB": "Британияи Кабир",
+  "US": "Иёлоти Муттаҳидаи Амрико",
+  "UY": "Уругвай",
+  "UZ": "Узбекистон",
+  "VU": "Вануату",
+  "VA": "Ватикан",
+  "VE": "Венесуэла",
+  "VN": "Ветнам",
+  "WF": "Уолис ва Футуна",
+  "EH": "Сахараи Ғарбӣ",
+  "YE": "Йемен",
+  "ZM": "Замбия",
+  "ZW": "Зимбабве",
+  "AQ": "Антарктика",
+  "GL": "Гринландия"
+};
+
+// Map continents to their respective countries (ISO codes)
+const continents: Continent[] = [
+  {
+    id: "africa",
+    name: "Africa", 
+    nameTajik: "Африқо",
+    color: "#10B981",
+    countries: ["DZ", "AO", "BJ", "BW", "BF", "BI", "CM", "CV", "CF", "TD", "KM", "CG", "CD", "CI", "DJ", "EG", "GQ", "ER", "ET", "GA", "GM", "GH", "GN", "GW", "KE", "LS", "LR", "LY", "MG", "MW", "ML", "MR", "MU", "MA", "MZ", "NA", "NE", "NG", "RW", "ST", "SN", "SC", "SL", "SO", "ZA", "SS", "SD", "SZ", "TZ", "TG", "TN", "UG", "ZM", "ZW"]
+  },
+  {
+    id: "asia",
+    name: "Asia",
+    nameTajik: "Осиё", 
+    color: "#F59E0B",
+    countries: ["AF", "AM", "AZ", "BH", "BD", "BT", "BN", "KH", "CN", "CY", "GE", "IN", "ID", "IR", "IQ", "IL", "JP", "JO", "KZ", "KW", "KG", "LA", "LB", "MY", "MV", "MN", "MM", "NP", "KP", "OM", "PK", "PS", "PH", "QA", "SA", "SG", "KR", "LK", "SY", "TW", "TJ", "TH", "TL", "TR", "TM", "AE", "UZ", "VN", "YE"]
+  },
+  {
+    id: "europe", 
+    name: "Europe",
+    nameTajik: "Аврупо",
+    color: "#8B5CF6",
+    countries: ["AL", "AD", "AT", "BY", "BE", "BA", "BG", "HR", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IS", "IE", "IT", "XK", "LV", "LI", "LT", "LU", "MK", "MT", "MD", "MC", "ME", "NL", "NO", "PL", "PT", "RO", "RU", "SM", "RS", "SK", "SI", "ES", "SE", "CH", "UA", "GB", "VA"]
+  },
+  {
+    id: "north-america",
+    name: "North America",
+    nameTajik: "Амрикои Шимолӣ",
+    color: "#EF4444", 
+    countries: ["AG", "BS", "BB", "BZ", "CA", "CR", "CU", "DM", "DO", "SV", "GD", "GT", "HT", "HN", "JM", "MX", "NI", "PA", "KN", "LC", "VC", "TT", "US"]
+  },
+  {
+    id: "south-america",
+    name: "South America", 
+    nameTajik: "Амрикои Ҷанубӣ",
+    color: "#06B6D4",
+    countries: ["AR", "BO", "BR", "CL", "CO", "EC", "FK", "GF", "GY", "PY", "PE", "SR", "UY", "VE"]
+  },
+  {
+    id: "australia",
+    name: "Australia & Oceania",
+    nameTajik: "Австралия ва Уқёнусия", 
+    color: "#F97316",
+    countries: ["AU", "FJ", "KI", "MH", "FM", "NR", "NZ", "PW", "PG", "WS", "SB", "TO", "TV", "VU"]
+  },
+  {
+    id: "antarctica",
+    name: "Antarctica",
+    nameTajik: "Антарктида",
+    color: "#64748B",
+    countries: ["AQ"]
+  }
+];
+
+type ColorMode = "continents" | "unique" | "plain";
+
+interface WorldMapSVGProps {
+  selectedContinent?: string;
+  onContinentClick: (continentId: string) => void;
+  hoveredContinent?: string;
+  onContinentHover: (continentId: string | undefined) => void;
+  onCountryClick?: (countryCode: string) => void;
+  selectedCountry?: string;
+  countryFeedback?: { countryCode: string; isCorrect: boolean } | null;
+  isFindCountryMode?: boolean;
+  colorMode?: ColorMode;
+}
+
+export default function WorldMapSVG({ 
+  selectedContinent, 
+  onContinentClick, 
+  hoveredContinent,
+  onContinentHover,
+  onCountryClick,
+  selectedCountry,
+  countryFeedback,
+  isFindCountryMode = false,
+  colorMode = "continents"
+}: WorldMapSVGProps) {
+  const chartRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<am5.Root | null>(null);
+  const chartInstanceRef = useRef<am5map.MapChart | null>(null);
+  const polygonSeriesRef = useRef<am5map.MapPolygonSeries | null>(null);
+  const [isGlobeView, setIsGlobeView] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousPolygonRef = useRef<am5map.MapPolygon | null>(null);
+  const colorModeRef = useRef<ColorMode>(colorMode);
+
+  // Helper function to get continent by country code
+  const getContinentByCountry = (countryCode: string): Continent | undefined => {
+    return continents.find(continent => 
+      continent.countries.includes(countryCode)
+    );
+  };
+
+  // Generate unique color for each country
+  const getUniqueCountryColor = (countryCode: string): string => {
+    // Simple hash function to generate consistent colors
+    let hash = 0;
+    for (let i = 0; i < countryCode.length; i++) {
+      hash = countryCode.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    // Convert hash to RGB color with good saturation and lightness
+    const hue = Math.abs(hash) % 360;
+    const saturation = 0.7 + (Math.abs(hash) % 100) / 500; // 0.7-0.9
+    const lightness = 0.5 + (Math.abs(hash) % 100) / 500; // 0.5-0.7
+    
+    // HSL to RGB conversion
+    const c = (1 - Math.abs(2 * lightness - 1)) * saturation;
+    const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+    const m = lightness - c / 2;
+    
+    let r = 0, g = 0, b = 0;
+    if (0 <= hue && hue < 60) {
+      r = c; g = x; b = 0;
+    } else if (60 <= hue && hue < 120) {
+      r = x; g = c; b = 0;
+    } else if (120 <= hue && hue < 180) {
+      r = 0; g = c; b = x;
+    } else if (180 <= hue && hue < 240) {
+      r = 0; g = x; b = c;
+    } else if (240 <= hue && hue < 300) {
+      r = x; g = 0; b = c;
+    } else if (300 <= hue && hue < 360) {
+      r = c; g = 0; b = x;
+    }
+    
+    // Convert to hex
+    const toHex = (n: number) => Math.round((n + m) * 255).toString(16).padStart(2, '0');
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  };
+
+  // Function to select and center on a country (based on amCharts examples)
+  const selectCountry = (countryId: string) => {
+    if (!polygonSeriesRef.current || !chartInstanceRef.current) return;
+    
+    // Small delay to ensure chart is fully loaded
+    setTimeout(() => {
+      const dataItem = polygonSeriesRef.current?.getDataItemById(countryId);
+      const target = dataItem?.get("mapPolygon");
+      
+      if (target && isGlobeView) {
+        const centroid = target.geoCentroid();
+        if (centroid) {
+          chartInstanceRef.current?.animate({ 
+            key: "rotationX", 
+            to: -centroid.longitude, 
+            duration: 1500, 
+            easing: am5.ease.inOut(am5.ease.cubic) 
+          });
+          chartInstanceRef.current?.animate({ 
+            key: "rotationY", 
+            to: -centroid.latitude, 
+            duration: 1500, 
+            easing: am5.ease.inOut(am5.ease.cubic) 
+          });
+        }
+      } else if (target && !isGlobeView) {
+        // For flat view, zoom to the country
+        polygonSeriesRef.current?.zoomToDataItem(dataItem as any);
+      }
+    }, 100);
+  };
+
+  // Initialize map
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    // Create root
+    const root = am5.Root.new(chartRef.current);
+    rootRef.current = root;
+
+    // Set themes
+    root.setThemes([am5themes_Animated.new(root)]);
+
+    // Create chart
+    const chart = root.container.children.push(
+      am5map.MapChart.new(root, {
+        panX: isGlobeView ? "rotateX" : "translateX",
+        panY: isGlobeView ? "rotateY" : "translateY", 
+        projection: isGlobeView ? am5map.geoOrthographic() : am5map.geoMercator(),
+        paddingBottom: 20,
+        paddingTop: 20,
+        paddingLeft: 20,
+        paddingRight: 20
+      })
+    );
+    chartInstanceRef.current = chart;
+
+    // Create polygon series
+    const polygonSeries = chart.series.push(
+      am5map.MapPolygonSeries.new(root, {
+        geoJSON: am5geodata_worldLow,
+        exclude: [] // Don't exclude Antarctica for educational purposes
+      })
+    );
+    polygonSeriesRef.current = polygonSeries;
+
+    // Configure polygons
+    polygonSeries.mapPolygons.template.setAll({
+      tooltipText: "{name}",
+      toggleKey: "active",
+      interactive: true,
+      fill: am5.color("#E5E7EB"), // Default gray
+      stroke: am5.color("#FFFFFF"),
+      strokeWidth: 1
+    });
+
+    // Use adapter to show Tajik country names in tooltips
+    polygonSeries.mapPolygons.template.adapters.add("tooltipText", (text, target) => {
+      const dataItem = target.dataItem;
+      if (dataItem && dataItem.dataContext) {
+        const countryCode = (dataItem.dataContext as any).id as string;
+        const tajikName = countryNamesTajik[countryCode];
+        if (tajikName) {
+          return tajikName;
+        }
+        // Fall back to English name if Tajik translation not available
+        return (dataItem.dataContext as any).name || text;
+      }
+      return text;
+    });
+
+    // Color countries based on selected mode with feedback override
+    polygonSeries.mapPolygons.template.adapters.add("fill", (fill, target) => {
+      const dataItem = target.dataItem;
+      if (dataItem && dataItem.dataContext) {
+        const countryCode = (dataItem.dataContext as any).id as string;
+        
+        // Show feedback colors if country feedback is active (for game modes)
+        if (countryFeedback && countryFeedback.countryCode === countryCode) {
+          return am5.color(countryFeedback.isCorrect ? "#10B981" : "#EF4444"); // Green for correct, red for incorrect
+        }
+        
+        // Apply color based on current mode (using ref to avoid stale closure)
+        switch (colorModeRef.current) {
+          case "continents": {
+            const continent = getContinentByCountry(countryCode);
+            if (continent) {
+              return am5.color(continent.color);
+            }
+            break;
+          }
+          case "unique": {
+            return am5.color(getUniqueCountryColor(countryCode));
+          }
+          case "plain": {
+            return am5.color("#64748B"); // Neutral slate color
+          }
+        }
+      }
+      return am5.color("#E5E7EB"); // Default fallback
+    });
+
+    // Hover state
+    polygonSeries.mapPolygons.template.states.create("hover", {
+      fill: am5.color("#3B82F6")
+    });
+
+    // Active state 
+    polygonSeries.mapPolygons.template.states.create("active", {
+      fill: am5.color("#1D4ED8")
+    });
+
+    // Handle clicks - improved based on amCharts examples  
+    polygonSeries.mapPolygons.template.events.on("click", function(ev) {
+      const target = ev.target;
+      if (target && target.dataItem && target.dataItem.dataContext) {
+        const countryCode = (target.dataItem.dataContext as any).id as string;
+        const continent = getContinentByCountry(countryCode);
+        
+        // Call country click handler if provided (for country-specific games)
+        if (onCountryClick) {
+          onCountryClick(countryCode);
+        }
+        
+        // Call continent click handler for continent-based interactions (but not during find-country mode)
+        if (continent && !isFindCountryMode) {
+          onContinentClick(continent.id);
+          // Use the selectCountry function for proper rotation/zooming
+          selectCountry(countryCode);
+        }
+      }
+    });
+
+    // Handle mouse events
+    polygonSeries.mapPolygons.template.events.on("pointerover", function(ev) {
+      const target = ev.target;
+      if (target && target.dataItem && target.dataItem.dataContext) {
+        const countryCode = (target.dataItem.dataContext as any).id as string;
+        const continent = getContinentByCountry(countryCode);
+        if (continent) {
+          onContinentHover(continent.id);
+        }
+      }
+    });
+
+    polygonSeries.mapPolygons.template.events.on("pointerout", function() {
+      onContinentHover(undefined);
+    });
+
+    // Add globe-specific features
+    if (isGlobeView) {
+      // Create background series for globe (based on amCharts examples)
+      const backgroundSeries = chart.series.push(am5map.MapPolygonSeries.new(root, {}));
+      backgroundSeries.mapPolygons.template.setAll({
+        fill: root.interfaceColors.get("alternativeBackground"),
+        fillOpacity: 0.1,
+        strokeOpacity: 0
+      });
+      backgroundSeries.data.push({
+        geometry: am5map.getGeoRectangle(90, 180, -90, -180)
+      });
+
+      // Add graticule (grid lines) - moved to front for proper layering
+      const graticuleSeries = chart.series.unshift(
+        am5map.GraticuleSeries.new(root, { step: 10 })
+      );
+      graticuleSeries.mapLines.template.set("strokeOpacity", 0.1);
+    }
+
+    // Add zoom control for flat view
+    if (!isGlobeView) {
+      const zoomControl = chart.set("zoomControl", am5map.ZoomControl.new(root, {}));
+      zoomControl.homeButton.set("visible", true);
+
+      // Click on water to zoom out
+      chart.chartContainer.get("background")?.events.on("click", function() {
+        chart.goHome();
+      });
+    }
+
+    // Animate on load
+    chart.appear(1000, 100);
+    
+    // Use a reliable event to clear loading state when chart is ready
+    root.events.once("frameended", () => {
+      setIsLoading(false);
+    });
+    
+    // Fallback timeout to ensure loading state is cleared
+    const fallbackTimeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+
+    return () => {
+      // Clear timeouts on cleanup
+      clearTimeout(fallbackTimeout);
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
+      
+      if (rootRef.current) {
+        rootRef.current.dispose();
+        rootRef.current = null;
+        chartInstanceRef.current = null;
+        polygonSeriesRef.current = null;
+      }
+    };
+  }, [isGlobeView]);
+
+  // Update selected continent highlighting
+  useEffect(() => {
+    if (!polygonSeriesRef.current) return;
+
+    // Reset all countries
+    polygonSeriesRef.current.mapPolygons.each((polygon) => {
+      polygon.set("active", false);
+    });
+
+    // Highlight selected continent
+    if (selectedContinent) {
+      const continent = continents.find(c => c.id === selectedContinent);
+      if (continent) {
+        continent.countries.forEach(countryCode => {
+          const dataItem = polygonSeriesRef.current?.getDataItemById(countryCode);
+          if (dataItem) {
+            const polygon = dataItem.get("mapPolygon");
+            polygon?.set("active", true);
+          }
+        });
+      }
+    }
+  }, [selectedContinent]);
+
+  // Update country feedback highlighting
+  useEffect(() => {
+    if (!polygonSeriesRef.current || !countryFeedback) return;
+
+    // Force re-render of the specific country polygon to apply feedback colors
+    const dataItem = polygonSeriesRef.current.getDataItemById(countryFeedback.countryCode);
+    if (dataItem) {
+      const polygon = dataItem.get("mapPolygon");
+      if (polygon) {
+        // Trigger fill adapter re-evaluation by temporarily setting and clearing a property
+        polygon.set("fill", polygon.get("fill"));
+      }
+    }
+  }, [countryFeedback]);
+
+  // Update colors when colorMode changes
+  useEffect(() => {
+    // Keep ref in sync with prop
+    colorModeRef.current = colorMode;
+    
+    if (!polygonSeriesRef.current) return;
+
+    // Force re-render of all polygons to apply new color mode
+    polygonSeriesRef.current.mapPolygons.each((polygon) => {
+      // Trigger fill adapter re-evaluation
+      polygon.set("fill", polygon.get("fill"));
+    });
+  }, [colorMode]);
+
+  const toggleView = () => {
+    if (isLoading) return; // Prevent multiple clicks during loading
+    
+    setIsLoading(true);
+    // Clear any existing timeout
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+    }
+    
+    // Small delay to show loading state before recreating chart
+    loadingTimeoutRef.current = setTimeout(() => {
+      setIsGlobeView(!isGlobeView);
+    }, 100);
+  };
+
+  return (
+    <div className="w-full flex flex-col bg-gradient-to-b from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl overflow-hidden">
+      {/* View Toggle */}
+      <div className="flex justify-center p-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={toggleView}
+          disabled={isLoading}
+          className="gap-2"
+          data-testid="button-toggle-view"
+        >
+          {isGlobeView ? <Map className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
+          {isGlobeView ? "Нақшаи тахт" : "Кураи замин"}
+        </Button>
+      </div>
+      
+      {/* Map Container */}
+      <div className="h-[clamp(320px,60vh,720px)] relative">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 z-10">
+            <div className="text-center">
+              <div className="w-8 h-8 border-4 border-blue-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-2"></div>
+              <p className="text-sm text-muted-foreground">
+                {!isGlobeView ? "Тайёр кардани кураи замин..." : "Тайёр кардани нақша..."}
+              </p>
+            </div>
+          </div>
+        )}
+        <div 
+          ref={chartRef}
+          className="w-full h-full"
+          style={{ width: '100%', height: '100%' }}
+          data-testid="map-container"
+        />
+      </div>
+      
+      {/* Legend */}
+      <div className="p-3 bg-white/50 dark:bg-gray-800/50">
+        <div className="text-center text-sm text-muted-foreground mb-2">
+          Қитъаҳо / Continents
+        </div>
+        <div className="flex flex-wrap justify-center gap-2">
+          {continents.filter(c => c.id !== "antarctica").map((continent) => (
+            <div
+              key={continent.id}
+              className="flex items-center gap-1 text-xs"
+            >
+              <div 
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: continent.color }}
+              />
+              <span>{continent.nameTajik}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export { continents };
+export type { Continent };
