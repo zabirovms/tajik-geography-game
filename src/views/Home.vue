@@ -212,15 +212,19 @@ export default {
         .map(([key, game]) => ({ key, ...game }))
     },
     showGameDetails(gameKey) {
+      console.log('Showing game details for:', gameKey)
       this.selectedGame = this.games[gameKey]
+      console.log('Selected game:', this.selectedGame)
       this.showDetails = true
     },
     closeDetails() {
       this.showDetails = false
     },
     startGame(path) {
+      console.log('Starting game with path:', path)
       this.closeDetails()
       this.$router.push(path)
+      console.log('Navigation attempted to:', path)
     },
     getGameIcon(gameKey) {
       const icons = {
