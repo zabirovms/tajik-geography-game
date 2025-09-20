@@ -319,6 +319,7 @@ export default {
       timeLeft,
       currentQuestionIndex,
       totalQuestions,
+      questions,
       currentQuestion,
       feedback,
       isLoading,
