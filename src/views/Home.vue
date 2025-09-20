@@ -77,7 +77,7 @@
         <h2 class="modal-title">{{ selectedGame.title }}</h2>
         <p class="modal-description">{{ selectedGame.description }}</p>
         <div class="modal-buttons">
-          <button class="btn btn-primary" @click="startGame(selectedGame.path)">
+          <button class="btn btn-primary" @click.stop="startGame(selectedGame.path)">
             Шуруъ кардани бозӣ
           </button>
           <button class="btn" @click="closeDetails">Пӯшидан</button>
@@ -219,8 +219,10 @@ export default {
       this.showDetails = false
     },
     startGame(path) {
-      this.closeDetails()
       this.$router.push(path)
+      this.$nextTick(() => {
+        this.closeDetails()
+      })
     },
     getGameIcon(gameKey) {
       const icons = {
