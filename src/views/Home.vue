@@ -4,6 +4,12 @@
     <div class="welcome-section">
       <h1 class="title">Чолиши дониши ҷуғрофия</h1>
       <p class="subtitle">Дониши ҷуғрофияи худро санҷед, балли болоро ба даст оваред!</p>
+      <div style="margin: 1rem 0; padding: 1rem; background: #f0f0f0; border-radius: 0.5rem;">
+        <p><strong>Тести роҳ:</strong></p>
+        <router-link to="/games/flags" style="margin-right: 1rem; color: blue;">➤ Бозии байрақ</router-link>
+        <router-link to="/games/shapes" style="margin-right: 1rem; color: blue;">➤ Бозии шаклҳо</router-link>
+        <router-link to="/games/capitals" style="color: blue;">➤ Бозии пойтахтҳо</router-link>
+      </div>
       
       <div class="stats-bar">
         <div class="stats-item" v-for="(stat, index) in statsData" :key="index">
@@ -220,9 +226,7 @@ export default {
     },
     startGame(path) {
       this.$router.push(path)
-      this.$nextTick(() => {
-        this.closeDetails()
-      })
+      this.closeDetails()
     },
     getGameIcon(gameKey) {
       const icons = {
