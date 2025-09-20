@@ -82,11 +82,6 @@
       <div class="modal-content" @click.stop>
         <h2 class="modal-title">{{ selectedGame.title }}</h2>
         <p class="modal-description">{{ selectedGame.description }}</p>
-        <div style="background: #f0f0f0; padding: 1rem; margin: 1rem 0; border-radius: 0.5rem; font-size: 0.8rem;">
-          <strong>DEBUG:</strong><br>
-          selectedGame.path: {{ selectedGame.path }}<br>
-          selectedGame object: {{ JSON.stringify(selectedGame, null, 2) }}
-        </div>
         <div class="modal-buttons">
           <button class="btn btn-primary" @click.stop="startGame(selectedGame.path)">
             Шуруъ кардани бозӣ
