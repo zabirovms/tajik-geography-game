@@ -225,3 +225,66 @@ export function formatTime(seconds) {
   const secs = seconds % 60
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
+
+/**
+ * Generate a shapes/map question for the shapes game
+ * @param {Array} countries - Array of country objects
+ * @param {string} gameMode - 'country-to-shape' or 'shape-to-country'
+ * @returns {Object} Question object with country data and continent info
+ */
+export function generateShapesQuestion(countries, gameMode = 'country-to-shape') {
+  if (!countries || countries.length === 0) {
+    return null
+  }
+
+  // Filter out countries without proper geographical data
+  const validCountries = countries.filter(country => 
+    country.cca2 && country.localizedName && country.region
+  )
+
+  if (validCountries.length === 0) {
+    return null
+  }
+
+  // Select a random country
+  const randomIndex = Math.floor(Math.random() * validCountries.length)
+  const selectedCountry = validCountries[randomIndex]
+
+  // Get continent name in Tajik
+  const continentNamesTajik = {
+    'Africa': 'Африқо',
+    'Asia': 'Осиё', 
+    'Europe': 'Аврупо',
+    'North America': 'Амрикои Шимолӣ',
+    'South America': 'Амрикои Ҷанубӣ',
+    'Americas': 'Амрикаҳо',
+    'Australia': 'Австралия ва Уқёнусия',
+    'Oceania': 'Австралия ва Уқёнусия',
+    'Antarctica': 'Антарктида'
+  }
+
+  return {
+    id: selectedCountry.cca2,
+    cca2: selectedCountry.cca2,
+    name: selectedCountry.name?.common || selectedCountry.localizedName,
+    localizedName: selectedCountry.localizedName,
+    region: selectedCountry.region,
+    continent: continentNamesTajik[selectedCountry.region] || selectedCountry.region,
+    gameMode: gameMode,
+    type: 'shapes'
+  }
+}
+
+/**
+ * Calculate score based on time remaining and difficulty (for shapes/map games)
+ */
+export function calculateMapScore(timeLeft, difficulty) {
+  const basePoints = {
+    'easy': 10,
+    'medium': 15,
+    'hard': 20
+  }
+  
+  const timeBonus = Math.max(0, timeLeft) * 2
+  return basePoints[difficulty] + timeBonus
+}
