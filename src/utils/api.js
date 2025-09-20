@@ -268,6 +268,28 @@ class ApiService {
   }
 
   /**
+   * Get countries filtered by difficulty level
+   * easy: Europe (1), medium: Americas/Asia (2), hard: Africa/Oceania/Antarctic (3)
+   */
+  getCountriesByDifficulty(countries, difficulty) {
+    const difficultyMapping = {
+      'Europe': 1,
+      'Americas': 2,
+      'Asia': 2,
+      'Africa': 3,
+      'Oceania': 3,
+      'Antarctic': 3
+    }
+    
+    const targetLevel = difficulty === 'easy' ? 1 : difficulty === 'medium' ? 2 : 3
+    
+    return countries.filter(country => {
+      const countryDifficulty = difficultyMapping[country.region] || 2
+      return countryDifficulty === targetLevel
+    })
+  }
+
+  /**
    * Get countries by region for difficulty levels
    */
   async getCountriesByRegion(region) {
