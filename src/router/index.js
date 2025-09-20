@@ -46,6 +46,11 @@ const routes = [
     component: RandomMode
   },
   {
+    path: '/maptest',
+    name: 'MapTest',
+    component: () => import('../views/MapTest.vue')
+  },
+  {
     path: '/achievements',
     name: 'Achievements',
     component: Achievements
