@@ -1,8 +1,8 @@
 <template>
   <main class="container">
-    <h1>我的成就</h1>
+    <h1>Дастовардҳои ман</h1>
     <div class="achievements-content">
-      <p>成就系统内容将在这里显示。</p>
+      <p>Мундариҷаи низоми дастовардҳо дар ин ҷо нишон дода мешавад.</p>
     </div>
   </main>
 </template>

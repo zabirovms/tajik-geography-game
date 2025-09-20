@@ -135,9 +135,9 @@ export default {
         },
         timedChallenge: {
           title: 'Чолиши вақтдор',
-          description: 'Dar vaqt-i mahdud ba miqdori zyodi masalahāi jughrāfī javob dihed, anborashī va sur‘at-i javobdihīi khudro sānjed.',
+          description: 'Дар вақти маҳдуд ба миқдори зиёди масъалаҳои ҷуғрофӣ ҷавоб диҳед, дақиқӣ va sur‘at-i javobdihīi khudro sānjed.',
           modes: [
-            { name: 'Javobdihīi sare‘', desc: 'Dar 60 sāniya javobāt-i zyād ball-i zyād', difficulty: 2 },
+            { name: 'Ҷавобдиҳии sare‘', desc: 'Dar 60 sāniya javobāt-i zyād ball-i zyād', difficulty: 2 },
             { name: 'Regime-i zindamoni', desc: 'Javob-i nādurust khatm meshavad, ball-i maksimalīro koyosh kun', difficulty: 3 }
           ],
           rewards: { firstWin: 150 },

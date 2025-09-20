@@ -1,15 +1,15 @@
 <template>
   <main class="container">
     <div class="game-header">
-      <button class="back-btn" @click="$router.go(-1)">← 返回</button>
-      <h1>轮廓挑战</h1>
+      <button class="back-btn" @click="$router.go(-1)">← Бозгашт</button>
+      <h1>Чолиши шаклҳо</h1>
     </div>
     
     <div class="game-content">
       <div class="placeholder-content">
-        <h2>🗺️ 轮廓挑战</h2>
-        <p>通过国家轮廓形状测试你的地理知识！</p>
-        <button class="btn btn-primary">开始游戏</button>
+        <h2>🗺️ Чолиши шаклҳо</h2>
+        <p>Бо шаклҳои ҳудуди мамлакатҳо дониши ҷуғрофияи худро санҷед!</p>
+        <button class="btn btn-primary">Шуруъ кардани бозӣ</button>
       </div>
     </div>
   </main>

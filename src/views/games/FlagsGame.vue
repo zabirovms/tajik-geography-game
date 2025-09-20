@@ -1,16 +1,16 @@
 <template>
   <main class="container">
     <div class="game-header">
-      <button class="back-btn" @click="$router.go(-1)">← 返回</button>
-      <h1>旗帜挑战</h1>
+      <button class="back-btn" @click="$router.go(-1)">← Бозгашт</button>
+      <h1>Чолиши байрақ</h1>
     </div>
     
     <div class="game-content">
-      <p>旗帜游戏即将开始！这里将是旗帜识别游戏的内容。</p>
+      <p>Бозии байрақ оғоз мешавад! Дар ин ҷо мундариҷаи бозии шинохти байрақ хоҳад буд.</p>
       <div class="placeholder-content">
-        <h2>🏳️ 旗帜挑战</h2>
-        <p>识别世界各国的旗帜，测试你的地理知识！</p>
-        <button class="btn btn-primary">开始游戏</button>
+        <h2>🏳️ Чолиши байрақ</h2>
+        <p>Байрақҳои мамлакатҳои ҷаҳонро шинохта, дониши ҷуғрофияи худро санҷед!</p>
+        <button class="btn btn-primary">Шуруъ кардани бозӣ</button>
       </div>
     </div>
   </main>

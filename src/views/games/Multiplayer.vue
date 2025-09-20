@@ -1,15 +1,15 @@
 <template>
   <main class="container">
     <div class="game-header">
-      <button class="back-btn" @click="$router.go(-1)">← 返回</button>
-      <h1>多人对战</h1>
+      <button class="back-btn" @click="$router.go(-1)">← Бозгашт</button>
+      <h1>Бозии чанднафара</h1>
     </div>
     
     <div class="game-content">
       <div class="placeholder-content">
-        <h2>👥 多人对战</h2>
-        <p>邀请好友一起参与地理知识竞赛！</p>
-        <button class="btn btn-primary">开始游戏</button>
+        <h2>👥 Бозии чанднафара</h2>
+        <p>Дӯстонро ба мусобиқаи дониши ҷуғрофӣ даъват кунед!</p>
+        <button class="btn btn-primary">Шуруъ кардани бозӣ</button>
       </div>
     </div>
   </main>

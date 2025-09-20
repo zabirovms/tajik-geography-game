@@ -1,15 +1,15 @@
 <template>
   <main class="container">
     <div class="game-header">
-      <button class="back-btn" @click="$router.go(-1)">← 返回</button>
-      <h1>首都挑战</h1>
+      <button class="back-btn" @click="$router.go(-1)">← Бозгашт</button>
+      <h1>Чолиши пойтахтҳо</h1>
     </div>
     
     <div class="game-content">
       <div class="placeholder-content">
-        <h2>🏛️ 首都挑战</h2>
-        <p>测试你对世界各国首都的认知！</p>
-        <button class="btn btn-primary">开始游戏</button>
+        <h2>🏛️ Чолиши пойтахтҳо</h2>
+        <p>Шинохти шумо нисбат ба пойтахтҳои мамлакатҳои ҷаҳонро санҷед!</p>
+        <button class="btn btn-primary">Шуруъ кардани бозӣ</button>
       </div>
     </div>
   </main>
