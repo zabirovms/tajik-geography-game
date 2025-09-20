@@ -2,8 +2,8 @@
   <main class="container">
     <!-- Welcome Section -->
     <div class="welcome-section">
-      <h1 class="title">Chālish-i Dānish-i Jughrāfiyā</h1>
-      <p class="subtitle">Dānish-i jughrāfiyāi khudro sanjiyed, ball-i bālāro ba dast ovarid!</p>
+      <h1 class="title">Чолиши дониши ҷуғрофия</h1>
+      <p class="subtitle">Дониши ҷуғрофияи худро санҷед, балли болоро ба даст оваред!</p>
       
       <div class="stats-bar">
         <div class="stats-item" v-for="(stat, index) in statsData" :key="index">
@@ -18,7 +18,7 @@
       <input 
         type="text" 
         v-model="searchKey" 
-        placeholder="Justujūi regime-hāi bāzī"
+        placeholder="Ҷустуҷуи режимҳои бозӣ"
         class="search-input"
         @input="searchGames"
       />
@@ -41,7 +41,7 @@
     <!-- Game List -->
     <div class="game-list">
       <div v-if="filteredGames.length === 0" class="no-games">
-        <p>Dar in qism bāzī-hā mavjud nestand</p>
+        <p>Дар ин қисм бозӣҳо мавҷуд нестанд</p>
       </div>
 
       <div 
@@ -63,10 +63,10 @@
               {{ mode.name }}
             </span>
             <div :class="['difficulty-tag', getDifficultyClass(game.modes[0].difficulty)]">
-              Darajah: {{ "★".repeat(game.modes[0].difficulty) }}{{ "☆".repeat(3 - game.modes[0].difficulty) }}
+              Дараҷа: {{ "★".repeat(game.modes[0].difficulty) }}{{ "☆".repeat(3 - game.modes[0].difficulty) }}
             </div>
           </div>
-          <p class="game-bonus">Mukofoti yakumin guzarish: {{ game.rewards.firstWin }} ball</p>
+          <p class="game-bonus">Мукофоти якумин гузариш: {{ game.rewards.firstWin }} балл</p>
         </div>
       </div>
     </div>
@@ -78,9 +78,9 @@
         <p class="modal-description">{{ selectedGame.description }}</p>
         <div class="modal-buttons">
           <button class="btn btn-primary" @click="startGame(selectedGame.path)">
-            Shurū kardan-i bāzī
+            Шуруъ кардани бозӣ
           </button>
-          <button class="btn" @click="closeDetails">Pūshidan</button>
+          <button class="btn" @click="closeDetails">Пӯшидан</button>
         </div>
       </div>
     </div>
@@ -95,46 +95,46 @@ export default {
       showDetails: false,
       selectedGame: {},
       searchKey: '',
-      currentCategory: 'Hama',
-      categories: ['Hama', 'Shoroqatī', 'Pīshrafta', 'Chālish', 'Chandin nafara'],
+      currentCategory: 'Ҳама',
+      categories: ['Ҳама', 'Осон', 'Пешрафта', 'Чолиш', 'Чандин нафара'],
       statsData: [
-        { value: '6', label: 'Regime-hāi bāzī' },
-        { value: '200+', label: 'Miqdāri masalahā' },
-        { value: '10K+', label: 'Shūmāri chālish-hā' }
+        { value: '6', label: 'Режимҳои бозӣ' },
+        { value: '200+', label: 'Миқдори масалаҳо' },
+        { value: '10K+', label: 'Шумораи чолишҳо' }
       ],
       games: {
         flags: {
-          title: 'Chālish-i Bayraqa',
-          description: 'Farhang-i bayraqa-hāi mamlakatho-yī jahānro mukshif sāzed, az shinokht-i soda-yi bayraqa-hā to fahm-i ‘amiq-i tārīkh va ma‘nī-yi ānhā.',
+          title: 'Чолиши байрақ',
+          description: 'Фарҳанги байрақҳои мамлакатҳои ҷаҳонро мукашшиф созед, аз шинохти содаи байрақҳо то фаҳми амиқи торих ва маънии онҳо.',
           modes: [
-            { name: 'Regime-i ibtidoī', desc: 'Shinokht-i bayraqa-hāi asosi-yi mamlakatho', difficulty: 1 },
-            { name: 'Regime-i ‘olī', desc: 'Chālish-i bayraqa-hāi nodīr va shabeh', difficulty: 2 }
+            { name: 'Режими ибтидоӣ', desc: 'Шинохти байрақҳои асосии мамлакатҳо', difficulty: 1 },
+            { name: 'Режими олӣ', desc: 'Чолиши байрақҳои нодир ва шабеҳ', difficulty: 2 }
           ],
           rewards: { firstWin: 100 },
           path: '/games/flags'
         },
         shapes: {
-          title: 'Chālish-i Shaklhā',
-          description: 'Bā shaklhāi hudud-i mamlakatho dānish-i jughrāfiyāi khudro sānjed va qobililyat-i tashkhis-i fazāīro inkishāf dihed.',
+          title: 'Чолиши шаклҳо',
+          description: 'Бо шаклҳои ҳудуди мамлакатҳо дониши ҷуғрофияи худро санҷед ва қобилияти ташхиси фазоӣро инкишоф диҳед.',
           modes: [
-            { name: 'Shinokht-i payā', desc: 'Âmukht-i shaklhāi mumtoz-i mamlakatho', difficulty: 2 },
-            { name: 'Chālish-i sur‘at', desc: 'Dar vaqt-i moilayn tashkhis-i shaklhāi mamlakatho', difficulty: 3 }
+            { name: 'Шинохти паё', desc: 'Омӯхти шаклҳои мумтози мамлакатҳо', difficulty: 2 },
+            { name: 'Чолиши суръат', desc: 'Дар вақти муайян ташхиси шаклҳои мамлакатҳо', difficulty: 3 }
           ],
           rewards: { firstWin: 150 },
           path: '/games/shapes'
         },
         capitals: {
-          title: 'Chālish-i Poytakhtho',
-          description: 'Shinokht-i shumā nisbat ba poytakhtho-yi mamlakatho-yi jahānro sānjed, az tanosub-i soda-yi poytakhtho to dānish-i ‘amiq-i tārīkhī va farhangī.',
+          title: 'Чолиши пойтахтҳо',
+          description: 'Шинохти шумо нисбат ба пойтахтҳои мамлакатҳои ҷаҳонро санҷед, аз таносуби содаи пойтахтҳо то дониши амиқи торихӣ ва фарҳангӣ.',
           modes: [
-            { name: 'Tanosub-i poytakhtho', desc: 'Mamlakatho v poytakhtho-yi ānhāro durus mutanosibsāzed', difficulty: 2 },
-            { name: 'Kashf-i farhangī', desc: 'Shenokht-i khūsusiyathāi tārīkhī va farhang-i poytakhtho', difficulty: 3 }
+            { name: 'Таносуби пойтахтҳо', desc: 'Мамлакатҳо в пойтахтҳои онҳоро дурус мутаносибсозед', difficulty: 2 },
+            { name: 'Кашфи фарҳангӣ', desc: 'Шинохти хусусиятҳои торихӣ ва фарҳанги пойтахтҳо', difficulty: 3 }
           ],
           rewards: { firstWin: 120 },
           path: '/games/capitals'
         },
         timedChallenge: {
-          title: 'Chālish-i Vaqdor',
+          title: 'Чолиши вақтдор',
           description: 'Dar vaqt-i mahdud ba miqdori zyodi masalahāi jughrāfī javob dihed, anborashī va sur‘at-i javobdihīi khudro sānjed.',
           modes: [
             { name: 'Javobdihīi sare‘', desc: 'Dar 60 sāniya javobāt-i zyād ball-i zyād', difficulty: 2 },
@@ -144,7 +144,7 @@ export default {
           path: '/games/timed-challenge'
         },
         multiplayer: {
-          title: 'Muqoyisa-i Chandin Nafara',
+          title: 'Муқоисаи чандин нафара',
           description: 'Dūstoni khudro ba musobaqa-yi dānish-i jughrāfī da‘vat kun, regime-i muqoyisa dar vaqt-i haqīqī āmukhtanro shavīqtar mesāzad.',
           modes: [
             { name: 'Muqoyisa-i dūstān', desc: 'Bā dūstontān muqoyisa-yi 1v1 dar vaqt-i haqīqī', difficulty: 2 },
@@ -154,7 +154,7 @@ export default {
           path: '/games/multiplayer'
         },
         randomMode: {
-          title: 'Regime-i Tasodufī',
+          title: 'Режими тасодуфӣ',
           description: 'Chālish-i tasodufī-yi hama naw‘-i masalahā, har bār tajriba-yi nav, dānish-i mukhtalifu jughrāfiyāi umumīro takmīl kun.',
           modes: [
             { name: 'Guzarish-i tasodufī', desc: 'Tarkib-i tasodufī-yi anvā‘-i masalahā barāi chālish', difficulty: 3 },
@@ -165,12 +165,12 @@ export default {
         }
       },
       gameCategories: {
-        flags: ['Shoroqatī', 'Pīshrafta'],
-        shapes: ['Pīshrafta', 'Chālish'],
-        capitals: ['Shoroqatī', 'Pīshrafta'],
-        timedChallenge: ['Chālish'],
-        multiplayer: ['Chandin nafara'],
-        randomMode: ['Chālish', 'Chandin nafara']
+        flags: ['Осон', 'Пешрафта'],
+        shapes: ['Пешрафта', 'Чолиш'],
+        capitals: ['Осон', 'Пешрафта'],
+        timedChallenge: ['Чолиш'],
+        multiplayer: ['Чандин нафара'],
+        randomMode: ['Чолиш', 'Чандин нафара']
       },
       filteredGames: []
     }
@@ -200,7 +200,7 @@ export default {
     },
     filterByCategory(category) {
       this.currentCategory = category
-      if (category === 'Hama') {
+      if (category === 'Ҳама') {
         this.initGamesList()
         return
       }

@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <nav class="nav-bar">
-      <div class="nav-title">Chālish-i Dānish-i Jughrāfiyā</div>
+      <div class="nav-title">Чолиши дониши ҷуғрофия</div>
     </nav>
     
     <router-view />
@@ -9,15 +9,15 @@
     <nav class="bottom-nav">
       <router-link to="/" class="nav-item">
         <span class="nav-icon">🏠</span>
-        <span class="nav-text">Khona</span>
+        <span class="nav-text">Хона</span>
       </router-link>
       <router-link to="/achievements" class="nav-item">
         <span class="nav-icon">🏆</span>
-        <span class="nav-text">Dastāvardhā</span>
+        <span class="nav-text">Дастовардҳо</span>
       </router-link>
       <router-link to="/profile" class="nav-item">
         <span class="nav-icon">👤</span>
-        <span class="nav-text">Man</span>
+        <span class="nav-text">Ман</span>
       </router-link>
     </nav>
   </div>
