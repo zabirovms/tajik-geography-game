@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@amcharts/amcharts5": "^5.13.6",
+    "@amcharts/amcharts5-fonts": "^5.0.1",
     "@amcharts/amcharts5-geodata": "^5.1.5",
     "serve": "^14.2.5",
     "vue": "^3.4.0",

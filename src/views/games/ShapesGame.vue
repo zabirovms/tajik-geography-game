@@ -15,10 +15,20 @@
     <div v-if="gameState === 'setup'" class="game-setup">
       <div class="setup-card">
         <div class="setup-icon">🌍</div>
-        <h2>Шаклҳои кишварҳо</h2>
-        <p>Кишварҳоро дар харитаи интерактивӣ пайдо кунед!</p>
+        <h2>Бозиҳои интерактивии ҷуғрофия</h2>
+        <p>Намуди бозӣ ва сатҳи мушкилиро интихоб кунед!</p>
         
         <div class="setup-options">
+          <div class="option-group">
+            <label>Намуди бозӣ:</label>
+            <select v-model="gameMode" class="setup-select">
+              <option value="map-shapes">🗺️ Шаклҳои кишварҳо</option>
+              <option value="population-bars">📊 Муқоисаи аҳолӣ</option>
+              <option value="area-pie">🥧 Андозаи минтақаҳо</option>
+              <option value="gdp-lines">💰 Иқтисодиёти кишварҳо</option>
+              <option value="capital-distance">📍 Масофаи пойтахтҳо</option>
+            </select>
+          </div>
           <div class="option-group">
             <label>Сатҳи мушкилӣ:</label>
             <select v-model="difficulty" class="setup-select">
@@ -29,8 +39,12 @@
           </div>
         </div>
         
-        <button @click="startGame" class="start-btn" :disabled="isLoading">
-          {{ isLoading ? 'Бор мешавад...' : 'Оғози бозӣ' }}
+        <div class="game-description">
+          <p>{{ getGameDescription() }}</p>
+        </div>
+        
+        <button @click="startGame" class="start-btn" :disabled="isLoading || countries.length === 0">
+          {{ isLoading ? 'Бор мешавад...' : countries.length === 0 ? 'Маълумот бор мешавад...' : 'Оғози бозӣ' }}
         </button>
       </div>
     </div>
@@ -39,14 +53,15 @@
     <div v-if="gameState === 'playing'" class="game-playing">
       <!-- Question Display -->
       <div v-if="currentQuestion" class="question-card">
-        <h2 class="question-text">{{ currentQuestion.localizedName }}-ро дар харита пайдо кунед</h2>
+        <h2 class="question-text">{{ getQuestionText() }}</h2>
         <div class="question-info">
           <span class="continent">{{ currentQuestion.continent }}</span>
+          <span v-if="currentQuestion.options" class="options-hint">{{ currentQuestion.options.length }} варианта</span>
         </div>
       </div>
 
-      <!-- Map Controls -->
-      <div class="map-controls">
+      <!-- Map Game Controls -->
+      <div v-if="gameMode === 'map-shapes'" class="map-controls">
         <button @click="toggleView" class="control-btn">
           {{ isGlobeView ? '🗺️ Харитаи ҳамвор' : '🌍 Глобус' }}
         </button>
@@ -57,9 +72,24 @@
         </select>
       </div>
 
-      <!-- Interactive Map -->
-      <div ref="chartContainer" class="map-container">
-        <div v-if="mapLoading" class="map-loading">Харита бор мешавад...</div>
+      <!-- Chart Game Options -->
+      <div v-if="gameMode !== 'map-shapes' && currentQuestion?.options" class="chart-options">
+        <div class="options-grid">
+          <button 
+            v-for="(option, index) in currentQuestion.options" 
+            :key="index"
+            @click="handleOptionClick(option)"
+            class="option-btn"
+            :class="{ 'correct': option.isCorrect, 'incorrect': option.isWrong }"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Interactive Chart Container -->
+      <div ref="chartContainer" class="chart-container" :class="gameMode">
+        <div v-if="mapLoading" class="chart-loading">{{ getLoadingText() }}</div>
       </div>
     </div>
 
@@ -91,6 +121,8 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import * as am5 from '@amcharts/amcharts5'
 import * as am5map from '@amcharts/amcharts5/map'
+import * as am5xy from '@amcharts/amcharts5/xy'
+import * as am5percent from '@amcharts/amcharts5/percent'
 import am5geodata_worldLow from '@amcharts/amcharts5-geodata/worldLow'
 import am5themes_Animated from '@amcharts/amcharts5/themes/Animated'
 import apiService from '@/utils/api.js'
@@ -179,6 +211,7 @@ export default {
     
     // Game state
     const gameState = ref('setup')
+    const gameMode = ref('map-shapes')
     const difficulty = ref('medium')
     const score = ref(0)
     const timeLeft = ref(0)
@@ -189,7 +222,7 @@ export default {
     const isLoading = ref(false)
     const countries = ref([])
     
-    // Map state - using working code from MapTest
+    // Chart containers for different game modes
     const chartContainer = ref(null)
     const isGlobeView = ref(false)
     const mapLoading = ref(true)
@@ -307,7 +340,7 @@ export default {
       })
       
       // Add country click handler for the game
-      polygonSeries.mapPolygons.template.on("click", (ev) => {
+      polygonSeries.mapPolygons.template.events.on("click", (ev) => {
         const countryCode = ev.target.dataItem?.get("id")
         if (countryCode && gameState.value === 'playing') {
           handleCountryClick(countryCode)
@@ -315,7 +348,7 @@ export default {
       })
       
       // When map loads, apply colors and hide loading
-      polygonSeries.onPrivate("geoJSON", () => {
+      polygonSeries.events.on("datavalidated", () => {
         updateColors()
         mapLoading.value = false
       })
@@ -354,11 +387,26 @@ export default {
     }
 
     const generateQuestion = () => {
-      const filteredCountries = apiService.getCountriesByDifficulty(countries.value, difficulty.value)
-      if (filteredCountries.length === 0) {
-        console.warn('No countries found for difficulty:', difficulty.value)
-        return null
+      switch (gameMode.value) {
+        case 'map-shapes':
+          return generateMapQuestion()
+        case 'population-bars':
+          return generatePopulationQuestion()
+        case 'area-pie':
+          return generateAreaQuestion()
+        case 'gdp-lines':
+          return generateGDPQuestion()
+        case 'capital-distance':
+          return generateDistanceQuestion()
+        default:
+          return generateMapQuestion()
       }
+    }
+
+    const generateMapQuestion = () => {
+      const filteredCountries = apiService.getCountriesByDifficulty(countries.value, difficulty.value)
+      if (filteredCountries.length === 0) return null
+      
       const randomIndex = Math.floor(Math.random() * filteredCountries.length)
       const selectedCountry = filteredCountries[randomIndex]
       
@@ -373,6 +421,94 @@ export default {
         cca2: selectedCountry.cca2,
         localizedName: countryNamesTajik[selectedCountry.cca2] || selectedCountry.localizedName,
         continent: continentNamesTajik[selectedCountry.region] || selectedCountry.region
+      }
+    }
+
+    const generatePopulationQuestion = () => {
+      const dataKeys = Object.keys(sampleData.population)
+      const correctIndex = Math.floor(Math.random() * Math.min(4, dataKeys.length))
+      const selectedKeys = dataKeys.slice(0, 4)
+      
+      const options = selectedKeys.map((key, index) => ({
+        label: sampleData.population[key].name,
+        value: sampleData.population[key].value,
+        isCorrect: index === correctIndex,
+        cca2: key
+      }))
+      
+      return {
+        localizedName: 'Population Question',
+        continent: 'Chart Data',
+        options,
+        correctAnswer: options[correctIndex]
+      }
+    }
+
+    const generateAreaQuestion = () => {
+      const areaData = {
+        'RU': { name: 'Русия', value: 17098242 },
+        'CA': { name: 'Канада', value: 9984670 },
+        'US': { name: 'ИМА', value: 9826675 },
+        'CN': { name: 'Чин', value: 9596960 }
+      }
+      
+      const dataKeys = Object.keys(areaData)
+      const options = dataKeys.map((key, index) => ({
+        label: areaData[key].name,
+        value: areaData[key].value,
+        isCorrect: index === 0, // Russia is largest
+        cca2: key
+      }))
+      
+      return {
+        localizedName: 'Area Question',
+        continent: 'Chart Data',
+        options,
+        correctAnswer: options[0]
+      }
+    }
+
+    const generateGDPQuestion = () => {
+      const dataKeys = Object.keys(sampleData.gdp)
+      const correctIndex = Math.floor(Math.random() * Math.min(4, dataKeys.length))
+      const selectedKeys = dataKeys.slice(0, 4)
+      
+      const options = selectedKeys.map((key, index) => ({
+        label: sampleData.gdp[key].name,
+        value: sampleData.gdp[key].value,
+        isCorrect: index === correctIndex,
+        cca2: key
+      }))
+      
+      return {
+        localizedName: 'GDP Question',
+        continent: 'Chart Data',
+        options,
+        correctAnswer: options[correctIndex]
+      }
+    }
+
+    const generateDistanceQuestion = () => {
+      const capitalData = {
+        'TJ': { name: 'Душанбе', lat: 38.5598, lng: 68.7870 },
+        'UZ': { name: 'Тошканд', lat: 41.2995, lng: 69.2401 },
+        'KG': { name: 'Бишкек', lat: 42.8746, lng: 74.5698 },
+        'KZ': { name: 'Нур-Султон', lat: 51.1694, lng: 71.4491 }
+      }
+      
+      const dataKeys = Object.keys(capitalData)
+      const options = dataKeys.map((key, index) => ({
+        label: capitalData[key].name,
+        distance: Math.random() * 1000 + 100, // Mock distances
+        isCorrect: index === 1, // Tashkent closest to Dushanbe
+        cca2: key
+      }))
+      
+      return {
+        localizedName: 'Distance Question',
+        continent: 'Chart Data',
+        options,
+        correctAnswer: options[1]
       }
     }
 
@@ -395,10 +531,234 @@ export default {
       timeLeft.value = difficulty.value === 'easy' ? 45 : difficulty.value === 'medium' ? 30 : 20
       startTimer()
       
-      // Initialize map
+      // Initialize appropriate chart
       nextTick(() => {
-        initializeMap()
+        mapLoading.value = true
+        initializeChart()
       })
+    }
+
+    const initializeChart = () => {
+      switch (gameMode.value) {
+        case 'map-shapes':
+          initializeMap()
+          break
+        case 'population-bars':
+          initializeBarChart()
+          break
+        case 'area-pie':
+          initializePieChart()
+          break
+        case 'gdp-lines':
+          initializeLineChart()
+          break
+        case 'capital-distance':
+          initializeScatterChart()
+          break
+        default:
+          initializeMap()
+      }
+    }
+
+    const initializeBarChart = () => {
+      if (!chartContainer.value) return
+      if (root) root.dispose()
+      
+      root = am5.Root.new(chartContainer.value)
+      root.setThemes([am5themes_Animated.new(root)])
+      
+      const chart = root.container.children.push(am5xy.XYChart.new(root, {
+        panX: true,
+        panY: true,
+        wheelX: "panX",
+        wheelY: "zoomX",
+        paddingLeft: 0
+      }))
+      
+      const yAxis = chart.yAxes.push(am5xy.CategoryAxis.new(root, {
+        categoryField: "country",
+        renderer: am5xy.AxisRendererY.new(root, {
+          minGridDistance: 10
+        })
+      }))
+      
+      const xAxis = chart.xAxes.push(am5xy.ValueAxis.new(root, {
+        renderer: am5xy.AxisRendererX.new(root, {})
+      }))
+      
+      const series = chart.series.push(am5xy.ColumnSeries.new(root, {
+        name: "Population",
+        xAxis: xAxis,
+        yAxis: yAxis,
+        valueXField: "value",
+        categoryYField: "country"
+      }))
+      
+      const data = Object.values(sampleData.population).slice(0, 5)
+      yAxis.data.setAll(data.map(d => ({ country: d.name })))
+      series.data.setAll(data.map(d => ({ country: d.name, value: d.value })))
+      
+      // Ensure loading stops when chart is ready
+      series.events.on("datavalidated", () => {
+        mapLoading.value = false
+      })
+    }
+
+    const initializePieChart = () => {
+      if (!chartContainer.value) return
+      if (root) root.dispose()
+      
+      root = am5.Root.new(chartContainer.value)
+      root.setThemes([am5themes_Animated.new(root)])
+      
+      const chart = root.container.children.push(am5percent.PieChart.new(root, {
+        layout: root.verticalLayout
+      }))
+      
+      const series = chart.series.push(am5percent.PieSeries.new(root, {
+        valueField: "value",
+        categoryField: "country"
+      }))
+      
+      const areaData = [
+        { country: "Русия", value: 17098242 },
+        { country: "Канада", value: 9984670 },
+        { country: "ИМА", value: 9826675 },
+        { country: "Чин", value: 9596960 },
+        { country: "Бразилия", value: 8514877 }
+      ]
+      
+      series.data.setAll(areaData)
+      
+      // Ensure loading stops when chart is ready
+      series.events.on("datavalidated", () => {
+        mapLoading.value = false
+      })
+    }
+
+    const initializeLineChart = () => {
+      if (!chartContainer.value) return
+      if (root) root.dispose()
+      
+      root = am5.Root.new(chartContainer.value)
+      root.setThemes([am5themes_Animated.new(root)])
+      
+      const chart = root.container.children.push(am5xy.XYChart.new(root, {
+        panX: true,
+        panY: true,
+        wheelX: "panX",
+        wheelY: "zoomX"
+      }))
+      
+      const xAxis = chart.xAxes.push(am5xy.CategoryAxis.new(root, {
+        categoryField: "country",
+        renderer: am5xy.AxisRendererX.new(root, {})
+      }))
+      
+      const yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+        renderer: am5xy.AxisRendererY.new(root, {})
+      }))
+      
+      const series = chart.series.push(am5xy.LineSeries.new(root, {
+        name: "GDP",
+        xAxis: xAxis,
+        yAxis: yAxis,
+        valueYField: "value",
+        categoryXField: "country"
+      }))
+      
+      const data = Object.values(sampleData.gdp).slice(0, 6)
+      xAxis.data.setAll(data.map(d => ({ country: d.name })))
+      series.data.setAll(data.map(d => ({ country: d.name, value: d.value })))
+      
+      // Ensure loading stops when chart is ready
+      series.events.on("datavalidated", () => {
+        mapLoading.value = false
+      })
+    }
+
+    const initializeScatterChart = () => {
+      if (!chartContainer.value) return
+      if (root) root.dispose()
+      
+      root = am5.Root.new(chartContainer.value)
+      root.setThemes([am5themes_Animated.new(root)])
+      
+      const chart = root.container.children.push(am5xy.XYChart.new(root, {
+        panX: true,
+        panY: true,
+        wheelX: "panX",
+        wheelY: "zoomX"
+      }))
+      
+      const xAxis = chart.xAxes.push(am5xy.ValueAxis.new(root, {
+        renderer: am5xy.AxisRendererX.new(root, {})
+      }))
+      
+      const yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+        renderer: am5xy.AxisRendererY.new(root, {})
+      }))
+      
+      const series = chart.series.push(am5xy.XYSeries.new(root, {
+        name: "Distances",
+        xAxis: xAxis,
+        yAxis: yAxis,
+        valueYField: "distance",
+        valueXField: "index",
+        tooltip: am5.Tooltip.new(root, {
+          labelText: "{city}: {distance} км"
+        })
+      }))
+      
+      // Add circles for scatter plot
+      series.set("fill", am5.color("#3b82f6"))
+      series.bullets.push(() => {
+        return am5.Bullet.new(root, {
+          sprite: am5.Circle.new(root, {
+            radius: 6,
+            fill: am5.color("#3b82f6")
+          })
+        })
+      })
+      
+      const distanceData = [
+        { index: 1, distance: 340, city: "Тошканд" },
+        { index: 2, distance: 680, city: "Бишкек" },
+        { index: 3, distance: 1240, city: "Нур-Султон" },
+        { index: 4, distance: 920, city: "Ашғобот" }
+      ]
+      
+      series.data.setAll(distanceData)
+      
+      // Ensure loading stops when chart is ready
+      series.events.on("datavalidated", () => {
+        mapLoading.value = false
+      })
+    }
+
+    const handleOptionClick = (option) => {
+      if (!currentQuestion.value || gameState.value !== 'playing') return
+      
+      if (gameTimer) clearInterval(gameTimer)
+      
+      if (option.isCorrect) {
+        const points = 10 + timeLeft.value * 2
+        score.value += points
+        
+        feedback.value = {
+          type: 'correct',
+          message: `Офарин! +${points} балл`
+        }
+      } else {
+        feedback.value = {
+          type: 'incorrect',
+          message: `Нодуруст! Ҷавоби дуруст: ${currentQuestion.value.correctAnswer?.label}`
+        }
+      }
+      
+      setTimeout(() => {
+        nextQuestion()
+      }, 2500)
     }
 
     const startTimer = () => {
@@ -482,6 +842,76 @@ export default {
       router.push('/')
     }
 
+    // Sample data for chart games
+    const sampleData = {
+      population: {
+        'CN': { name: 'Чин', value: 1439323776, continent: 'Осиё' },
+        'IN': { name: 'Ҳиндустон', value: 1380004385, continent: 'Осиё' },
+        'US': { name: 'ИМА', value: 331002651, continent: 'Амрикои Шимолӣ' },
+        'ID': { name: 'Индонезия', value: 273523615, continent: 'Осиё' },
+        'PK': { name: 'Покистон', value: 220892340, continent: 'Осиё' },
+        'BR': { name: 'Бразилия', value: 212559417, continent: 'Амрикои Ҷанубӣ' },
+        'NG': { name: 'Нигерия', value: 206139589, continent: 'Африқо' },
+        'BD': { name: 'Бангладеш', value: 164689383, continent: 'Осиё' },
+        'RU': { name: 'Русия', value: 145934462, continent: 'Аврупо' },
+        'MX': { name: 'Мексика', value: 128932753, continent: 'Амрикои Шимолӣ' }
+      },
+      gdp: {
+        'US': { name: 'ИМА', value: 21427700, continent: 'Амрикои Шимолӣ' },
+        'CN': { name: 'Чин', value: 14342300, continent: 'Осиё' },
+        'JP': { name: 'Япония', value: 4937400, continent: 'Осиё' },
+        'DE': { name: 'Олмон', value: 3846400, continent: 'Аврупо' },
+        'IN': { name: 'Ҳиндустон', value: 2875100, continent: 'Осиё' },
+        'GB': { name: 'Британияи Кабир', value: 2829100, continent: 'Аврупо' },
+        'FR': { name: 'Фаронса', value: 2716000, continent: 'Аврупо' },
+        'IT': { name: 'Италия', value: 2001200, continent: 'Аврупо' },
+        'BR': { name: 'Бразилия', value: 1869200, continent: 'Амрикои Ҷанубӣ' },
+        'CA': { name: 'Канада', value: 1736400, continent: 'Амрикои Шимолӣ' }
+      }
+    }
+
+    // Game mode descriptions
+    const getGameDescription = () => {
+      const descriptions = {
+        'map-shapes': 'Кишварҳоро дар харитаи интерактивӣ пайдо кунед ва зер кунед!',
+        'population-bars': 'Кишварҳоро аз рӯи шумораи аҳолӣ муқоиса кунед!',
+        'area-pie': 'Андозаи минтақаҳои кишварҳоро дар диаграммаи доираӣ бинед!',
+        'gdp-lines': 'Иқтисодиёти кишварҳоро дар намуди хатӣ муқоиса кунед!',
+        'capital-distance': 'Масофаи байни пойтахтҳоро дар диаграмма пайдо кунед!'
+      }
+      return descriptions[gameMode.value] || descriptions['map-shapes']
+    }
+
+    const getQuestionText = () => {
+      if (!currentQuestion.value) return ''
+      
+      switch (gameMode.value) {
+        case 'map-shapes':
+          return `${currentQuestion.value.localizedName}-ро дар харита пайдо кунед`
+        case 'population-bars':
+          return `Кадом кишвар бештарин аҳолӣ дорад?`
+        case 'area-pie':
+          return `Кадом кишвар калонтарин минтақа дорад?`
+        case 'gdp-lines':
+          return `Кадом кишвар қувватарин иқтисодиёт дорад?`
+        case 'capital-distance':
+          return `Кадом пойтахт наздиктарин аст?`
+        default:
+          return `${currentQuestion.value.localizedName}-ро пайдо кунед`
+      }
+    }
+
+    const getLoadingText = () => {
+      const loadingTexts = {
+        'map-shapes': 'Харита бор мешавад...',
+        'population-bars': 'Диаграммаи аҳолӣ бор мешавад...',
+        'area-pie': 'Диаграммаи минтақаҳо бор мешавад...',
+        'gdp-lines': 'Диаграммаи иқтисодӣ бор мешавад...',
+        'capital-distance': 'Диаграммаи масофа бор мешавад...'
+      }
+      return loadingTexts[gameMode.value] || 'Бор мешавад...'
+    }
+
     // Lifecycle
     onMounted(() => {
       loadCountries()
@@ -494,14 +924,15 @@ export default {
 
     return {
       // Game state
-      gameState, difficulty, score, timeLeft, currentQuestionIndex, totalQuestions,
-      currentQuestion, feedback, isLoading,
+      gameState, gameMode, difficulty, score, timeLeft, currentQuestionIndex, totalQuestions,
+      currentQuestion, feedback, isLoading, countries,
       
-      // Map state
+      // Chart state
       chartContainer, isGlobeView, mapLoading, colorMode,
       
       // Methods
-      startGame, restartGame, goHome, toggleView, updateColors
+      startGame, restartGame, goHome, toggleView, updateColors, getGameDescription,
+      getQuestionText, getLoadingText, handleOptionClick, handleCountryClick
     }
   }
 }
@@ -695,7 +1126,7 @@ export default {
   font-size: 14px;
 }
 
-.map-container {
+.chart-container {
   flex: 1;
   background: #f8fafc;
   border: 2px solid rgba(255, 255, 255, 0.2);
@@ -704,13 +1135,94 @@ export default {
   min-height: 400px;
 }
 
-.map-loading {
+.chart-container.map-shapes {
+  /* Map-specific styles */
+}
+
+.chart-container.population-bars,
+.chart-container.gdp-lines,
+.chart-container.capital-distance {
+  min-height: 350px;
+}
+
+.chart-container.area-pie {
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-loading, .map-loading {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   font-size: 18px;
   color: #666;
+  font-weight: 500;
+}
+
+.chart-options {
+  margin-bottom: 16px;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.option-btn {
+  padding: 12px 20px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.option-btn:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.option-btn.correct {
+  background: #10b981;
+  color: white;
+  border-color: #10b981;
+}
+
+.option-btn.incorrect {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
+
+.options-hint {
+  background: #e0f2fe;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #0369a1;
+  margin-left: 8px;
+}
+
+.game-description {
+  margin: 16px 0;
+  padding: 12px;
+  background: #f0f9ff;
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+}
+
+.game-description p {
+  margin: 0;
+  color: #1e40af;
   font-weight: 500;
 }
 

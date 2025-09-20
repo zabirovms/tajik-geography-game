@@ -1,0 +1,112 @@
+amCharts
+Products
+Demos
+Download
+Buy
+Support & Licenses
+Docs
+Download amCharts 5
+You can download and use all amCharts 5 products for free. The only limitation of the free version is that a small amCharts logo will be displayed in the corner of your charts. If you’d rather have your charts without any branding, or you appreciate the software and would like to support its creators, please purchase a commercial license.
+
+Download amCharts 5
+Changelog
+Geodata changelog
+Download amCharts 4
+Changelog
+Geodata changelog
+Download amCharts 3
+Commercial downloads 
+Deprecated Downloads
+ Install via NPM
+Latest version (5.13.6)
+The best way to get amCharts 5 is via NPM. The charting functionality is in the package @amcharts/amcharts5. Map files are in @amcharts/amcharts5-geodata. Font files used for PDF in @amcharts/amcharts5-fonts.
+
+npm install @amcharts/amcharts5
+npm install @amcharts/amcharts5-geodata
+npm install @amcharts/amcharts5-fonts
+ Use CDN
+Latest version (5.13.6)
+All amCharts libraries and plugins are available as a ready-to-include CDN resources. They are all accessible via http(s)://cdn.amcharts.com/lib/5/ URL prefix.
+
+<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/locales/de_DE.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/geodata/germanyLow.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/fonts/notosans-sc.js"></script>
+Please note, above CDN links contains the latest released versions. This means that the version you use may be upgraded without your intervention.
+
+The current latest versions of amCharts 5 packages are as follows:
+
+amCharts 5 (main package)	5.13.6
+Geodata (maps)	5.1.5
+Fonts	5.0.1
+Specific versions
+Whole back-catalog of versions for the main package are available in CDN via http(s)://cdn.amcharts.com/lib/version/[version number].
+
+<script src="https://cdn.amcharts.com/lib/version/5.13.6/index.js"></script>
+<script src="https://cdn.amcharts.com/lib/version/5.13.6/xy.js"></script>
+<script src="https://cdn.amcharts.com/lib/version/5.13.6/themes/Animated.js"></script>
+<script src="https://cdn.amcharts.com/lib/version/5.13.6/locales/de_DE.js"></script>
+Version specific CDN is not available for geodata and fonts packages.
+
+DISCLAIMER: The CDN resources are served through high-availability, load-balanced infrastructure. However amCharts does not provide any guarantees regarding uptime, availability and version consistency. It’s pretty reliable for production use, but if you need any to be extra cautious, use your own server infrastructure.
+
+ Download a standalone JavaScript version
+If you’d like to install amCharts 5 files right on your server, you can download these archives listed below.
+
+amCharts 5
+JavaScript Charts & Maps
+Version 5.13.6
+(August 27, 2025)	5.4M	Download
+amCharts 5 fonts	Version 5.0.1
+(August 25, 2021)	18.5M	Download
+amCharts 5 geodata	Version 5.1.5
+(July 10, 2025)	82.5M	Download
+ Fork from GitHub
+Our amCharts 5 repository contains source files in TypeScript, as well as build scripts to create your own version in JavaScript and ES2015.
+
+ Further info
+Not sure where to start? How about checking out “Getting started” tutorial in amCharts 5 documentation website.
+
+amCharts
+More info
+Accessibility Features
+About amCharts
+Partners
+Press Kit
+Getting support
+Subscribe to amNews
+Blog
+Products
+amCharts 5: Charts
+amCharts 5: Maps
+amCharts 5: Stock Chart
+WordPress Plugin 
+Version information
+3rd party software
+Tools & Resources
+Online Map Editor
+Visited Countries Map
+Visited States Map
+AI Chart Maker
+Free SVG Maps
+More Online Tools
+Legal Stuff
+Privacy Policy
+Terms & Conditions
+Address
+L. Rezos 14-4
+Neringa 93101
+Lithuania
+
+VAT ID: LT100003826811
+DUNS: 498387449
+
+Contact Us
+contact@amcharts.com
+Support Center
+Reporting a vulnerability
+Sci-Fi from amCharts
+
+Copyright © 2006-2025, amCharts. All rights reserved.
