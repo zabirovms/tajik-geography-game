@@ -2,8 +2,8 @@
   <main class="container">
     <!-- Welcome Section -->
     <div class="welcome-section">
-      <h1 class="title">地理知识挑战</h1>
-      <p class="subtitle">测试你的地理知识，挑战高分！</p>
+      <h1 class="title">Chālish-i Dānish-i Jughrāfiyā</h1>
+      <p class="subtitle">Dānish-i jughrāfiyāi khudro sanjiyed, ball-i bālāro ba dast ovarid!</p>
       
       <div class="stats-bar">
         <div class="stats-item" v-for="(stat, index) in statsData" :key="index">
@@ -18,7 +18,7 @@
       <input 
         type="text" 
         v-model="searchKey" 
-        placeholder="搜索游戏模式"
+        placeholder="Justujūi regime-hāi bāzī"
         class="search-input"
         @input="searchGames"
       />
@@ -41,7 +41,7 @@
     <!-- Game List -->
     <div class="game-list">
       <div v-if="filteredGames.length === 0" class="no-games">
-        <p>当前分类暂无游戏</p>
+        <p>Dar in qism bāzī-hā mavjud nestand</p>
       </div>
 
       <div 
@@ -63,10 +63,10 @@
               {{ mode.name }}
             </span>
             <div :class="['difficulty-tag', getDifficultyClass(game.modes[0].difficulty)]">
-              难度: {{ "★".repeat(game.modes[0].difficulty) }}{{ "☆".repeat(3 - game.modes[0].difficulty) }}
+              Darajah: {{ "★".repeat(game.modes[0].difficulty) }}{{ "☆".repeat(3 - game.modes[0].difficulty) }}
             </div>
           </div>
-          <p class="game-bonus">首次通关奖励：{{ game.rewards.firstWin }}积分</p>
+          <p class="game-bonus">Mukofoti yakumin guzarish: {{ game.rewards.firstWin }} ball</p>
         </div>
       </div>
     </div>
@@ -78,9 +78,9 @@
         <p class="modal-description">{{ selectedGame.description }}</p>
         <div class="modal-buttons">
           <button class="btn btn-primary" @click="startGame(selectedGame.path)">
-            开始游戏
+            Shurū kardan-i bāzī
           </button>
-          <button class="btn" @click="closeDetails">关闭</button>
+          <button class="btn" @click="closeDetails">Pūshidan</button>
         </div>
       </div>
     </div>
@@ -95,82 +95,82 @@ export default {
       showDetails: false,
       selectedGame: {},
       searchKey: '',
-      currentCategory: '全部',
-      categories: ['全部', '入门', '进阶', '挑战', '多人'],
+      currentCategory: 'Hama',
+      categories: ['Hama', 'Shoroqatī', 'Pīshrafta', 'Chālish', 'Chandin nafara'],
       statsData: [
-        { value: '6', label: '游戏模式' },
-        { value: '200+', label: '题目数量' },
-        { value: '10K+', label: '挑战次数' }
+        { value: '6', label: 'Regime-hāi bāzī' },
+        { value: '200+', label: 'Miqdāri masalahā' },
+        { value: '10K+', label: 'Shūmāri chālish-hā' }
       ],
       games: {
         flags: {
-          title: '旗帜挑战',
-          description: '探索世界各国的旗帜文化，从简单的国旗识别到深入了解旗帜的历史和含义。',
+          title: 'Chālish-i Bayraqa',
+          description: 'Farhang-i bayraqa-hāi mamlakatho-yī jahānro mukshif sāzed, az shinokht-i soda-yi bayraqa-hā to fahm-i ‘amiq-i tārīkh va ma‘nī-yi ānhā.',
           modes: [
-            { name: '初级模式', desc: '认识基本的国家旗帜', difficulty: 1 },
-            { name: '高级模式', desc: '挑战稀有和相似的旗帜', difficulty: 2 }
+            { name: 'Regime-i ibtidoī', desc: 'Shinokht-i bayraqa-hāi asosi-yi mamlakatho', difficulty: 1 },
+            { name: 'Regime-i ‘olī', desc: 'Chālish-i bayraqa-hāi nodīr va shabeh', difficulty: 2 }
           ],
           rewards: { firstWin: 100 },
           path: '/games/flags'
         },
         shapes: {
-          title: '轮廓挑战',
-          description: '通过国家轮廓形状测试你的地理知识，培养空间识别能力。',
+          title: 'Chālish-i Shaklhā',
+          description: 'Bā shaklhāi hudud-i mamlakatho dānish-i jughrāfiyāi khudro sānjed va qobililyat-i tashkhis-i fazāīro inkishāf dihed.',
           modes: [
-            { name: '基础认知', desc: '学习典型国家轮廓', difficulty: 2 },
-            { name: '速度挑战', desc: '限时识别国家形状', difficulty: 3 }
+            { name: 'Shinokht-i payā', desc: 'Âmukht-i shaklhāi mumtoz-i mamlakatho', difficulty: 2 },
+            { name: 'Chālish-i sur‘at', desc: 'Dar vaqt-i moilayn tashkhis-i shaklhāi mamlakatho', difficulty: 3 }
           ],
           rewards: { firstWin: 150 },
           path: '/games/shapes'
         },
         capitals: {
-          title: '首都挑战',
-          description: '测试你对世界各国首都的认知，从基础的首都匹配到深入的历史文化知识。',
+          title: 'Chālish-i Poytakhtho',
+          description: 'Shinokht-i shumā nisbat ba poytakhtho-yi mamlakatho-yi jahānro sānjed, az tanosub-i soda-yi poytakhtho to dānish-i ‘amiq-i tārīkhī va farhangī.',
           modes: [
-            { name: '首都配对', desc: '将国家与其首都正确匹配', difficulty: 2 },
-            { name: '文化探索', desc: '了解首都的历史和文化特色', difficulty: 3 }
+            { name: 'Tanosub-i poytakhtho', desc: 'Mamlakatho v poytakhtho-yi ānhāro durus mutanosibsāzed', difficulty: 2 },
+            { name: 'Kashf-i farhangī', desc: 'Shenokht-i khūsusiyathāi tārīkhī va farhang-i poytakhtho', difficulty: 3 }
           ],
           rewards: { firstWin: 120 },
           path: '/games/capitals'
         },
         timedChallenge: {
-          title: '限时挑战',
-          description: '在限定时间内回答尽可能多的地理问题，考验你的知识储备和反应速度。',
+          title: 'Chālish-i Vaqdor',
+          description: 'Dar vaqt-i mahdud ba miqdori zyodi masalahāi jughrāfī javob dihed, anborashī va sur‘at-i javobdihīi khudro sānjed.',
           modes: [
-            { name: '快速答题', desc: '60秒内答题越多分数越高', difficulty: 2 },
-            { name: '生存模式', desc: '答错即结束，争取最高分', difficulty: 3 }
+            { name: 'Javobdihīi sare‘', desc: 'Dar 60 sāniya javobāt-i zyād ball-i zyād', difficulty: 2 },
+            { name: 'Regime-i zindamoni', desc: 'Javob-i nādurust khatm meshavad, ball-i maksimalīro koyosh kun', difficulty: 3 }
           ],
           rewards: { firstWin: 150 },
           path: '/games/timed-challenge'
         },
         multiplayer: {
-          title: '多人对战',
-          description: '邀请好友一起参与地理知识竞赛，实时对战模式让学习更有趣。',
+          title: 'Muqoyisa-i Chandin Nafara',
+          description: 'Dūstoni khudro ba musobaqa-yi dānish-i jughrāfī da‘vat kun, regime-i muqoyisa dar vaqt-i haqīqī āmukhtanro shavīqtar mesāzad.',
           modes: [
-            { name: '好友对战', desc: '与好友进行1v1实时对战', difficulty: 2 },
-            { name: '团队竞赛', desc: '组队进行多人竞赛', difficulty: 2 }
+            { name: 'Muqoyisa-i dūstān', desc: 'Bā dūstontān muqoyisa-yi 1v1 dar vaqt-i haqīqī', difficulty: 2 },
+            { name: 'Musobaqa-yi guruhi', desc: 'Guruhsāzi va musobaqa-yi chandin nafara', difficulty: 2 }
           ],
           rewards: { firstWin: 200 },
           path: '/games/multiplayer'
         },
         randomMode: {
-          title: '随机模式',
-          description: '融合所有题型的随机挑战，每次体验都不同，提升综合地理知识。',
+          title: 'Regime-i Tasodufī',
+          description: 'Chālish-i tasodufī-yi hama naw‘-i masalahā, har bār tajriba-yi nav, dānish-i mukhtalifu jughrāfiyāi umumīro takmīl kun.',
           modes: [
-            { name: '随机闯关', desc: '随机组合各类题型进行挑战', difficulty: 3 },
-            { name: '每日挑战', desc: '每天固定题目组合', difficulty: 2 }
+            { name: 'Guzarish-i tasodufī', desc: 'Tarkib-i tasodufī-yi anvā‘-i masalahā barāi chālish', difficulty: 3 },
+            { name: 'Chālish-i hār rūza', desc: 'Tarkib-i sābit-i masalahā hār rūz', difficulty: 2 }
           ],
           rewards: { firstWin: 180 },
           path: '/games/random'
         }
       },
       gameCategories: {
-        flags: ['入门', '进阶'],
-        shapes: ['进阶', '挑战'],
-        capitals: ['入门', '进阶'],
-        timedChallenge: ['挑战'],
-        multiplayer: ['多人'],
-        randomMode: ['挑战', '多人']
+        flags: ['Shoroqatī', 'Pīshrafta'],
+        shapes: ['Pīshrafta', 'Chālish'],
+        capitals: ['Shoroqatī', 'Pīshrafta'],
+        timedChallenge: ['Chālish'],
+        multiplayer: ['Chandin nafara'],
+        randomMode: ['Chālish', 'Chandin nafara']
       },
       filteredGames: []
     }
@@ -200,7 +200,7 @@ export default {
     },
     filterByCategory(category) {
       this.currentCategory = category
-      if (category === '全部') {
+      if (category === 'Hama') {
         this.initGamesList()
         return
       }

@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <nav class="nav-bar">
-      <div class="nav-title">地理知识挑战</div>
+      <div class="nav-title">Chālish-i Dānish-i Jughrāfiyā</div>
     </nav>
     
     <router-view />
@@ -9,15 +9,15 @@
     <nav class="bottom-nav">
       <router-link to="/" class="nav-item">
         <span class="nav-icon">🏠</span>
-        <span class="nav-text">首页</span>
+        <span class="nav-text">Khona</span>
       </router-link>
       <router-link to="/achievements" class="nav-item">
         <span class="nav-icon">🏆</span>
-        <span class="nav-text">成就</span>
+        <span class="nav-text">Dastāvardhā</span>
       </router-link>
       <router-link to="/profile" class="nav-item">
         <span class="nav-icon">👤</span>
-        <span class="nav-text">我的</span>
+        <span class="nav-text">Man</span>
       </router-link>
     </nav>
   </div>
