@@ -22,10 +22,15 @@ class CountryAPIService {
     }
 
     try {
-      const response = await fetch(`${BASE_URL}/alpha/${countryCode}?fields=name,flags,capital,population,area,region,subregion,languages,currencies,timezones,borders,latlng,maps,coatOfArms,car,continents`)
+      const apiUrl = `${BASE_URL}/alpha/${countryCode}?fields=name,flags,capital,population,area,region,subregion,languages,currencies,timezones,borders,latlng,maps,coatOfArms,car,continents`
+      console.log(`Making API call to: ${apiUrl}`)
+      
+      const response = await fetch(apiUrl)
+      console.log(`API response status:`, response.status, response.statusText)
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch country data: ${response.status}`)
+        console.error(`API call failed with status ${response.status}:`, response.statusText)
+        throw new Error(`Failed to fetch country data: ${response.status} - ${response.statusText}`)
       }
 
       const countryData = await response.json()
@@ -292,22 +297,210 @@ class CountryAPIService {
   }
 
   /**
-   * Fallback data when API fails
+   * Enhanced fallback data with basic country information
    */
   getFallbackData(countryCode) {
+    // Basic country database for immediate display
+    const countryDatabase = {
+      'US': {
+        name: { common: 'Иёлоти Муттаҳидаи Амрико', official: 'Иёлоти Муттаҳидаи Амрико' },
+        capital: ['Вашингтон'],
+        region: 'Амрикои Шимолӣ',
+        population: 331000000,
+        area: 9833517,
+        languages: ['Англисӣ'],
+        currencies: [{ name: 'Доллари амрикоӣ', symbol: '$', code: 'USD' }],
+      },
+      'CN': {
+        name: { common: 'Чин', official: 'Ҷумҳурии Халқии Чин' },
+        capital: ['Пекин'],
+        region: 'Осиё',
+        population: 1440000000,
+        area: 9596961,
+        languages: ['Чинӣ'],
+        currencies: [{ name: 'Юани чинӣ', symbol: '¥', code: 'CNY' }],
+      },
+      'RU': {
+        name: { common: 'Русия', official: 'Федератсияи Русия' },
+        capital: ['Маскав'],
+        region: 'Аврупо/Осиё',
+        population: 146000000,
+        area: 17098242,
+        languages: ['Русӣ'],
+        currencies: [{ name: 'Рубли русӣ', symbol: '₽', code: 'RUB' }],
+      },
+      'IN': {
+        name: { common: 'Ҳинд', official: 'Ҷумҳурии Ҳинд' },
+        capital: ['Нав Делӣ'],
+        region: 'Осиё',
+        population: 1380000000,
+        area: 3287263,
+        languages: ['Ҳиндӣ', 'Англисӣ'],
+        currencies: [{ name: 'Рупияи ҳиндӣ', symbol: '₹', code: 'INR' }],
+      },
+      'BR': {
+        name: { common: 'Бразилия', official: 'Ҷумҳурии Федеративии Бразилия' },
+        capital: ['Бразилия'],
+        region: 'Амрикои Ҷанубӣ',
+        population: 213000000,
+        area: 8514877,
+        languages: ['Португалӣ'],
+        currencies: [{ name: 'Реали бразилӣ', symbol: 'R$', code: 'BRL' }],
+      },
+      'AU': {
+        name: { common: 'Австралия', official: 'Иттиҳодия Австралия' },
+        capital: ['Канберра'],
+        region: 'Уқёнусия',
+        population: 25500000,
+        area: 7692024,
+        languages: ['Англисӣ'],
+        currencies: [{ name: 'Доллари австралӣ', symbol: 'A$', code: 'AUD' }],
+      },
+      'DE': {
+        name: { common: 'Олмония', official: 'Ҷумҳурии Федеративии Олмония' },
+        capital: ['Берлин'],
+        region: 'Аврупо',
+        population: 83000000,
+        area: 357114,
+        languages: ['Олмонӣ'],
+        currencies: [{ name: 'Евро', symbol: '€', code: 'EUR' }],
+      },
+      'FR': {
+        name: { common: 'Фаронса', official: 'Ҷумҳурии Фаронса' },
+        capital: ['Париж'],
+        region: 'Аврупо',
+        population: 67000000,
+        area: 643801,
+        languages: ['Фаронсавӣ'],
+        currencies: [{ name: 'Евро', symbol: '€', code: 'EUR' }],
+      },
+      'GB': {
+        name: { common: 'Шоҳигарии Муттаҳида', official: 'Шоҳигарии Муттаҳидаи Бритониёи Кабир ва Ирландияи Шимолӣ' },
+        capital: ['Лондон'],
+        region: 'Аврупо',
+        population: 67000000,
+        area: 242495,
+        languages: ['Англисӣ'],
+        currencies: [{ name: 'Фунти стерлинг', symbol: '£', code: 'GBP' }],
+      },
+      'JP': {
+        name: { common: 'Япония', official: 'Япония' },
+        capital: ['Токё'],
+        region: 'Осиё',
+        population: 125800000,
+        area: 377930,
+        languages: ['Японӣ'],
+        currencies: [{ name: 'Йенаи японӣ', symbol: '¥', code: 'JPY' }],
+      },
+      'CA': {
+        name: { common: 'Канада', official: 'Канада' },
+        capital: ['Оттава'],
+        region: 'Амрикои Шимолӣ',
+        population: 38000000,
+        area: 9984670,
+        languages: ['Англисӣ', 'Фаронсавӣ'],
+        currencies: [{ name: 'Доллари канадӣ', symbol: 'C$', code: 'CAD' }],
+      },
+      'IT': {
+        name: { common: 'Италия', official: 'Ҷумҳурии Италия' },
+        capital: ['Рим'],
+        region: 'Аврупо',
+        population: 60400000,
+        area: 301340,
+        languages: ['Италиявӣ'],
+        currencies: [{ name: 'Евро', symbol: '€', code: 'EUR' }],
+      },
+      'TJ': {
+        name: { common: 'Тоҷикистон', official: 'Ҷумҳурии Тоҷикистон' },
+        capital: ['Душанбе'],
+        region: 'Осиё',
+        population: 9500000,
+        area: 143100,
+        languages: ['Тоҷикӣ'],
+        currencies: [{ name: 'Сомонӣ', symbol: 'ТҶС', code: 'TJS' }],
+      }
+    }
+
+    const basicData = countryDatabase[countryCode]
+    if (basicData) {
+      return {
+        code: countryCode,
+        name: basicData.name,
+        flag: { 
+          emoji: this.getCountryEmoji(countryCode), 
+          alt: `Байрақи ${basicData.name.common}`,
+          png: `https://flagcdn.com/w320/${countryCode.toLowerCase()}.png`
+        },
+        capital: basicData.capital,
+        region: basicData.region,
+        population: basicData.population,
+        area: basicData.area,
+        languages: basicData.languages,
+        currencies: basicData.currencies,
+        maps: {
+          googleMaps: `https://www.google.com/maps/search/${encodeURIComponent(basicData.name.common)}`,
+          openStreetMaps: `https://www.openstreetmap.org/search?query=${encodeURIComponent(basicData.name.common)}`
+        },
+        funFacts: this.generateFunFactsFromData(basicData),
+        educationalTips: this.generateEducationalTipsFromData(basicData),
+        borders: [],
+        timezones: [],
+        coordinates: []
+      }
+    }
+
+    // Default fallback for unknown countries
     return {
       code: countryCode,
-      name: { common: 'Unknown Country', official: 'Unknown', native: [] },
-      flag: { emoji: '🏳️', alt: 'Unknown flag' },
+      name: { common: 'Кишвари номаълум', official: 'Кишвари номаълум', native: [] },
+      flag: { emoji: '🏳️', alt: 'Байрақи номаълум' },
       capital: [],
-      region: 'Unknown',
+      region: 'Номаълум',
       population: 0,
       area: 0,
       languages: [],
       currencies: [],
-      funFacts: ['Маълумот дастрас нест'],
-      educationalTips: ['Интернет ва API-ро санҷед']
+      funFacts: ['Маълумот дар бораи ин кишвар дастрас нест'],
+      educationalTips: ['Маълумоти бештар дарёфт кунед']
     }
+  }
+
+  generateFunFactsFromData(countryData) {
+    const facts = []
+    
+    if (countryData.population) {
+      const populationMillions = (countryData.population / 1000000).toFixed(1)
+      facts.push(`Аҳолии ин кишвар тақрибан ${populationMillions} миллион нафар аст`)
+    }
+    
+    if (countryData.area) {
+      const areaThousands = (countryData.area / 1000).toFixed(0)
+      facts.push(`Масоҳати ин кишвар ${areaThousands} ҳазор км² аст`)
+    }
+    
+    if (countryData.languages && countryData.languages.length > 1) {
+      facts.push(`Дар ин кишвар ${countryData.languages.length} забони расмӣ мавҷуд аст`)
+    }
+
+    return facts
+  }
+
+  generateEducationalTipsFromData(countryData) {
+    const tips = []
+    
+    if (countryData.capital && countryData.capital.length > 0) {
+      tips.push(`Пойтахти ин кишвар ${countryData.capital[0]} аст`)
+    }
+    
+    if (countryData.region) {
+      tips.push(`Ин кишвар дар минтақаи ${countryData.region} воқеъ аст`)
+    }
+    
+    if (countryData.languages && countryData.languages.length > 0) {
+      tips.push(`Забони(ҳои) расмии ин кишвар: ${countryData.languages.join(', ')}`)
+    }
+
+    return tips
   }
 }
 
