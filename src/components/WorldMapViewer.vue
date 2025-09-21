@@ -17,6 +17,14 @@
     <div ref="chartContainer" class="chart-container" :class="{ 'learning-mode': mode === 'learning', 'game-mode': mode === 'game' }">
       <div v-if="isLoading" class="loading">{{ loadingText }}</div>
     </div>
+    
+    <!-- Interactive Tooltip -->
+    <CountryTooltip 
+      v-if="mode === 'learning'"
+      :visible="showTooltip"
+      :country-data="hoveredCountryData"
+      :position="tooltipPosition"
+    />
   </div>
 </template>
 
@@ -27,9 +35,14 @@ import * as am5map from '@amcharts/amcharts5/map'
 import am5geodata_worldLow from '@amcharts/amcharts5-geodata/worldLow'
 import am5themes_Animated from '@amcharts/amcharts5/themes/Animated'
 import { countryNamesTajik, continents, getContinentByCountry, getUniqueCountryColor } from '@/utils/mapData.js'
+import CountryTooltip from './CountryTooltip.vue'
+import countryAPI from '@/services/countryAPI.js'
 
 export default {
   name: 'WorldMapViewer',
+  components: {
+    CountryTooltip
+  },
   props: {
     mode: {
       type: String,
@@ -60,9 +73,18 @@ export default {
     const isLoading = ref(true)
     const colorMode = ref(props.initialColorMode)
     
+    // Tooltip state
+    const showTooltip = ref(false)
+    const hoveredCountryData = ref(null)
+    const tooltipPosition = ref({ x: 0, y: 0 })
+    
     let root = null
     let chart = null
     let polygonSeries = null
+    let hoverTimeout = null
+    let currentHoveredCountry = null
+    let animationController = null
+    let hoverAbortController = null
 
 
     const updateColors = () => {
@@ -138,12 +160,27 @@ export default {
 
       polygonSeries.mapPolygons.template.setAll(polygonConfig)
       
-      // Add hover effects
+      // Enhanced hover effects with smooth animations
       polygonSeries.mapPolygons.template.states.create("hover", {
         fill: props.mode === 'learning' ? am5.color("#10B981") : am5.color("#3B82F6"),
         stroke: am5.color("#FFFFFF"),
-        strokeWidth: 2
+        strokeWidth: 3,
+        strokeOpacity: 1,
+        fillOpacity: 0.9
       })
+      
+      // Add selection/active state for clicked countries
+      polygonSeries.mapPolygons.template.states.create("active", {
+        fill: am5.color("#F59E0B"),
+        stroke: am5.color("#FFFFFF"),
+        strokeWidth: 4,
+        strokeOpacity: 1,
+        fillOpacity: 1
+      })
+      
+      // Configure smooth animations
+      polygonSeries.mapPolygons.template.set("stateAnimationDuration", 300)
+      polygonSeries.mapPolygons.template.set("stateAnimationEasing", am5.ease.out(am5.ease.cubic))
       
       // Add Tajik tooltips for learning mode
       if (props.mode === 'learning') {
@@ -156,10 +193,40 @@ export default {
         })
       }
       
-      // Add country click handler
+      // Enhanced country click handler with animations
+      let selectedPolygon = null
+      
       polygonSeries.mapPolygons.template.on("click", (ev) => {
         const countryCode = ev.target.dataItem?.get("id")
         if (countryCode) {
+          // Remove previous selection
+          if (selectedPolygon) {
+            selectedPolygon.states.applyAnimate("default")
+          }
+          
+          // Apply selection animation to clicked country
+          selectedPolygon = ev.target
+          selectedPolygon.states.applyAnimate("active")
+          
+          // Add pulse animation for learning mode
+          if (props.mode === 'learning') {
+            const pulseAnimation = selectedPolygon.animate({
+              key: "fillOpacity",
+              to: 0.7,
+              duration: 200,
+              easing: am5.ease.inOut(am5.ease.cubic)
+            })
+            
+            pulseAnimation.events.on("stopped", () => {
+              selectedPolygon.animate({
+                key: "fillOpacity",
+                to: 1,
+                duration: 200,
+                easing: am5.ease.inOut(am5.ease.cubic)
+              })
+            })
+          }
+          
           emit('country-click', {
             countryCode,
             name: countryNamesTajik[countryCode] || countryCode,
@@ -168,10 +235,57 @@ export default {
         }
       })
 
-      // Add hover handler
-      polygonSeries.mapPolygons.template.on("pointerover", (ev) => {
+      // Enhanced hover handler with tooltip
+      polygonSeries.mapPolygons.template.on("pointerover", async (ev) => {
         const countryCode = ev.target.dataItem?.get("id")
-        if (countryCode) {
+        if (countryCode && props.mode === 'learning') {
+          // Clear any existing timeout
+          if (hoverTimeout) {
+            clearTimeout(hoverTimeout)
+          }
+          
+          currentHoveredCountry = countryCode
+          
+          // Set tooltip position from mouse coordinates
+          const containerRect = chartContainer.value.getBoundingClientRect()
+          tooltipPosition.value = {
+            x: ev.originalEvent?.clientX || containerRect.left + containerRect.width / 2,
+            y: ev.originalEvent?.clientY || containerRect.top + containerRect.height / 2
+          }
+          
+          // Show basic tooltip immediately
+          hoveredCountryData.value = {
+            name: { common: countryNamesTajik[countryCode] || countryCode },
+            flag: { emoji: getCountryFlagEmoji(countryCode) },
+            capital: [],
+            population: null
+          }
+          showTooltip.value = true
+          
+          // Cancel any existing hover request
+          if (hoverAbortController) {
+            hoverAbortController.abort()
+          }
+          
+          // Fetch detailed data with a slight delay and abort control
+          hoverTimeout = setTimeout(async () => {
+            if (currentHoveredCountry === countryCode) {
+              try {
+                hoverAbortController = new AbortController()
+                const detailedData = await countryAPI.getCountryByCode(countryCode)
+                if (currentHoveredCountry === countryCode && !hoverAbortController.signal.aborted) {
+                  hoveredCountryData.value = detailedData
+                }
+              } catch (error) {
+                if (error.name !== 'AbortError') {
+                  console.warn('Failed to load country details for tooltip:', error)
+                }
+              } finally {
+                hoverAbortController = null
+              }
+            }
+          }, 300)
+          
           emit('country-hover', {
             countryCode,
             name: countryNamesTajik[countryCode] || countryCode,
@@ -180,6 +294,37 @@ export default {
         }
       })
       
+      // Add mouse leave handler to hide tooltip
+      polygonSeries.mapPolygons.template.on("pointerout", () => {
+        if (props.mode === 'learning') {
+          if (hoverTimeout) {
+            clearTimeout(hoverTimeout)
+            hoverTimeout = null
+          }
+          
+          if (hoverAbortController) {
+            hoverAbortController.abort()
+            hoverAbortController = null
+          }
+          
+          currentHoveredCountry = null
+          showTooltip.value = false
+          hoveredCountryData.value = null
+        }
+      })
+      
+      // Handle mouse movement for tooltip positioning
+      if (props.mode === 'learning') {
+        chartContainer.value.addEventListener('mousemove', (ev) => {
+          if (showTooltip.value) {
+            tooltipPosition.value = {
+              x: ev.clientX,
+              y: ev.clientY
+            }
+          }
+        })
+      }
+      
       // When map loads, apply colors and hide loading
       polygonSeries.events.on("datavalidated", () => {
         updateColors()
@@ -187,14 +332,75 @@ export default {
         emit('map-ready')
       })
       
-      // Globe rotation for learning mode
+      // Enhanced globe rotation and zoom animations for learning mode
       if (isGlobeView.value && props.mode === 'learning') {
+        // Gentle rotation animation
         chart.animate({
           key: "rotationX",
           to: 360,
-          duration: 30000,
-          loops: Infinity
+          duration: 45000,
+          loops: Infinity,
+          easing: am5.ease.linear
         })
+        
+        // Add periodic zoom pulse for visual interest
+        const zoomAnimation = () => {
+          const zoomOut = chart.animate({
+            key: "zoomLevel",
+            to: 1.1,
+            duration: 3000,
+            easing: am5.ease.inOut(am5.ease.quad)
+          })
+          
+          zoomOut.events.on("stopped", () => {
+            const zoomIn = chart.animate({
+              key: "zoomLevel",
+              to: 1,
+              duration: 3000,
+              easing: am5.ease.inOut(am5.ease.quad)
+            })
+            
+            zoomIn.events.on("stopped", () => {
+              setTimeout(zoomAnimation, 5000) // Wait 5 seconds before next pulse
+            })
+          })
+        }
+        
+        // Start zoom animation after a delay
+        setTimeout(zoomAnimation, 3000)
+      }
+      
+      // Add interactive features for flat map
+      if (!isGlobeView.value && props.mode === 'learning') {
+        // Enable map dragging with momentum
+        chart.set("panX", "translateX")
+        chart.set("panY", "translateY")
+        chart.set("wheelY", "zoom")
+        
+        // Add subtle map breathing animation
+        const breatheAnimation = () => {
+          const breatheOut = polygonSeries.animate({
+            key: "fillOpacity",
+            to: 0.95,
+            duration: 4000,
+            easing: am5.ease.inOut(am5.ease.sine)
+          })
+          
+          breatheOut.events.on("stopped", () => {
+            const breatheIn = polygonSeries.animate({
+              key: "fillOpacity",
+              to: 1,
+              duration: 4000,
+              easing: am5.ease.inOut(am5.ease.sine)
+            })
+            
+            breatheIn.events.on("stopped", () => {
+              setTimeout(breatheAnimation, 8000)
+            })
+          })
+        }
+        
+        setTimeout(breatheAnimation, 2000)
       }
       
       console.log('WorldMapViewer initialized:', { 
@@ -224,16 +430,42 @@ export default {
     })
 
     onUnmounted(() => {
-      if (root) root.dispose()
+      // Clean up resources
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout)
+      }
+      if (hoverAbortController) {
+        hoverAbortController.abort()
+      }
+      if (root) {
+        root.dispose()
+      }
     })
 
+    // Helper function to get country flag emoji
+    const getCountryFlagEmoji = (countryCode) => {
+      try {
+        const codePoints = countryCode
+          .toUpperCase()
+          .split('')
+          .map(char => 127397 + char.charCodeAt())
+        return String.fromCodePoint(...codePoints)
+      } catch {
+        return '🏳️'
+      }
+    }
+    
     return {
       chartContainer,
       isGlobeView,
       isLoading,
       colorMode,
+      showTooltip,
+      hoveredCountryData,
+      tooltipPosition,
       toggleView,
-      updateColors
+      updateColors,
+      getCountryFlagEmoji
     }
   }
 }
