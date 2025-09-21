@@ -39,8 +39,11 @@ export default {
   border-top: 1px solid #e0e0e0;
   display: flex;
   justify-content: space-around;
-  padding: 0.5rem 0;
-  z-index: 100;
+  padding: 0.75rem 0;
+  z-index: 1000;
+  height: 70px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .nav-item {
@@ -67,7 +70,20 @@ export default {
   font-size: 0.75rem;
 }
 
-main {
-  padding-bottom: 70px; /* Space for bottom nav */
+/* Global spacing for bottom navigation - applies to ALL routes */
+body {
+  padding-bottom: 80px;
+}
+
+/* Ensure all page containers have proper spacing */
+main, .container, .shapes-game, .map-test-page {
+  min-height: calc(100vh - 80px);
+}
+
+/* Global container adjustments */
+#app {
+  min-height: 100vh;
+  position: relative;
+  padding-bottom: 80px;
 }
 </style>

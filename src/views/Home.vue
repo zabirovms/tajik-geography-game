@@ -38,6 +38,36 @@
       </div>
     </div>
 
+    <!-- Interactive Learning Map -->
+    <div class="learning-section">
+      <div class="learning-header">
+        <h2 class="learning-title">🌍 Харитаи таълимӣ</h2>
+        <p class="learning-subtitle">Ҷаҳонро кашф кунед ва дар бораи кишварҳо маълумот гиред</p>
+      </div>
+      
+      <div class="learning-map-container">
+        <WorldMapViewer 
+          mode="learning"
+          :show-controls="true"
+          loading-text="Харитаи таълимӣ бор мешавад..."
+          @country-click="handleCountryClick"
+          @country-hover="handleCountryHover"
+          @map-ready="onMapReady"
+        />
+      </div>
+      
+      <!-- Country Info Panel -->
+      <div v-if="selectedCountryInfo" class="country-info-panel">
+        <div class="country-info-header">
+          <h3>{{ selectedCountryInfo.name }}</h3>
+          <span v-if="selectedCountryInfo.continent" class="continent-badge">
+            {{ selectedCountryInfo.continent.nameTajik }}
+          </span>
+        </div>
+        <p class="country-info-text">Барои маълумоти бештар дар бораи ин кишвар клик кунед!</p>
+      </div>
+    </div>
+
     <!-- Game List -->
     <div class="game-list">
       <div v-if="filteredGames.length === 0" class="no-games">
@@ -88,14 +118,20 @@
 </template>
 
 <script>
+import WorldMapViewer from '@/components/WorldMapViewer.vue'
+
 export default {
   name: 'Home',
+  components: {
+    WorldMapViewer
+  },
   data() {
     return {
       showDetails: false,
       selectedGame: {},
       searchKey: '',
       currentCategory: 'Ҳама',
+      selectedCountryInfo: null,
       categories: ['Ҳама', 'Осон', 'Пешрафта', 'Чолиш', 'Чандин нафара'],
       statsData: [
         { value: '6', label: 'Режимҳои бозӣ' },
@@ -246,6 +282,17 @@ export default {
     },
     getDifficultyClass(difficulty) {
       return `difficulty-${difficulty}`
+    },
+    handleCountryClick(countryData) {
+      this.selectedCountryInfo = countryData
+      console.log('Кишвар сару клик шуд:', countryData.name)
+    },
+    handleCountryHover(countryData) {
+      // Митавон инҷо маълумоти hover зиёд илова куним
+      // console.log('Country hovered:', countryData.name)
+    },
+    onMapReady() {
+      console.log('Харитаи таълимӣ амода шуд')
     }
   }
 }
@@ -419,6 +466,80 @@ export default {
   color: #2979FF;
   font-weight: 500;
   font-size: 0.9rem;
+}
+
+/* Learning Section Styles */
+.learning-section {
+  margin: 2rem 0;
+  background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+  border-radius: 1rem;
+  padding: 2rem;
+  border: 2px solid #0EA5E9;
+  box-shadow: 0 10px 25px rgba(14, 165, 233, 0.1);
+}
+
+.learning-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.learning-title {
+  font-size: 1.8rem;
+  color: #0C4A6E;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.learning-subtitle {
+  color: #0369A1;
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.learning-map-container {
+  height: clamp(350px, 60vh, 600px);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  background: white;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.country-info-panel {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+}
+
+.country-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.country-info-header h3 {
+  color: #0C4A6E;
+  font-size: 1.4rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.continent-badge {
+  background: #0EA5E9;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.country-info-text {
+  color: #0369A1;
+  margin: 0;
+  line-height: 1.6;
 }
 
 .no-games {
