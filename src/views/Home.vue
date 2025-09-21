@@ -412,9 +412,16 @@ export default {
       return `difficulty-${difficulty}`
     },
     async handleCountryClick(countryData) {
+      console.log('handleCountryClick called with:', countryData) // Debug log
+      
       this.selectedCountryInfo = countryData
       this.isLoadingCountryData = true
       this.countryDetails = null
+      
+      console.log('State updated:', {
+        selectedCountryInfo: this.selectedCountryInfo,
+        isLoadingCountryData: this.isLoadingCountryData
+      }) // Debug log
       
       console.log('Кишвар сару клик шуд:', countryData.name)
       

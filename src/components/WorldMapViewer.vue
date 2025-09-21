@@ -146,7 +146,9 @@ export default {
         fill: am5.color("#E5E7EB"),
         stroke: am5.color("#FFFFFF"),
         strokeWidth: 0.5,
-        interactive: true
+        interactive: true,
+        cursorOverStyle: "pointer",
+        focusable: true
       }
 
       // Strictly enforce tooltip behavior per mode
@@ -159,6 +161,10 @@ export default {
       }
 
       polygonSeries.mapPolygons.template.setAll(polygonConfig)
+      
+      // Ensure polygons are interactive
+      polygonSeries.mapPolygons.template.set("interactive", true)
+      polygonSeries.mapPolygons.template.set("cursorOverStyle", "pointer")
       
       // Enhanced hover effects with smooth animations
       polygonSeries.mapPolygons.template.states.create("hover", {
@@ -196,8 +202,16 @@ export default {
       // Enhanced country click handler with animations
       let selectedPolygon = null
       
-      polygonSeries.mapPolygons.template.on("click", (ev) => {
-        const countryCode = ev.target.dataItem?.get("id")
+      // Alternative click handling method for better compatibility
+      polygonSeries.mapPolygons.template.on("click", function(ev) {
+        console.log('Click event triggered on polygon') // Debug log
+        
+        const polygon = ev.target
+        const dataItem = polygon.dataItem
+        const countryCode = dataItem ? dataItem.get("id") : null
+        
+        console.log('Country clicked:', countryCode, 'DataItem:', dataItem) // Debug log
+        
         if (countryCode) {
           // Remove previous selection
           if (selectedPolygon) {
@@ -205,7 +219,7 @@ export default {
           }
           
           // Apply selection animation to clicked country
-          selectedPolygon = ev.target
+          selectedPolygon = polygon
           selectedPolygon.states.applyAnimate("active")
           
           // Add pulse animation for learning mode
@@ -227,12 +241,28 @@ export default {
             })
           }
           
-          emit('country-click', {
+          const countryData = {
             countryCode,
             name: countryNamesTajik[countryCode] || countryCode,
             continent: getContinentByCountry(countryCode)
-          })
+          }
+          
+          console.log('Emitting country-click event:', countryData) // Debug log
+          emit('country-click', countryData)
+        } else {
+          console.log('No country code found for clicked element') // Debug log
         }
+      })
+      
+      // Add additional event listeners to ensure clicks are captured
+      polygonSeries.events.on("datavalidated", () => {
+        console.log('Polygon series data validated, countries loaded') // Debug log
+        
+        // Ensure all polygons are properly interactive
+        polygonSeries.mapPolygons.each((polygon) => {
+          polygon.set("interactive", true)
+          polygon.set("cursorOverStyle", "pointer")
+        })
       })
 
       // Enhanced hover handler with tooltip
