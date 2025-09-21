@@ -52,5 +52,5 @@ outputType = "webview"
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["npx", "serve", "-s", "dist", "-l", "5000"]
+run = ["npx", "serve", "-s", "dist"]
 build = ["npm", "run", "build"]
