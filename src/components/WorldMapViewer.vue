@@ -202,9 +202,10 @@ export default {
       // Enhanced country click handler with animations
       let selectedPolygon = null
       
-      // Alternative click handling method for better compatibility
+      // Primary click handling method
       polygonSeries.mapPolygons.template.on("click", function(ev) {
         console.log('Click event triggered on polygon') // Debug log
+        console.log('Event details:', ev) // Additional debug
         
         const polygon = ev.target
         const dataItem = polygon.dataItem
@@ -213,56 +214,223 @@ export default {
         console.log('Country clicked:', countryCode, 'DataItem:', dataItem) // Debug log
         
         if (countryCode) {
-          // Remove previous selection
-          if (selectedPolygon) {
-            selectedPolygon.states.applyAnimate("default")
-          }
-          
-          // Apply selection animation to clicked country
-          selectedPolygon = polygon
-          selectedPolygon.states.applyAnimate("active")
-          
-          // Add pulse animation for learning mode
-          if (props.mode === 'learning') {
-            const pulseAnimation = selectedPolygon.animate({
-              key: "fillOpacity",
-              to: 0.7,
-              duration: 200,
-              easing: am5.ease.inOut(am5.ease.cubic)
-            })
-            
-            pulseAnimation.events.on("stopped", () => {
-              selectedPolygon.animate({
-                key: "fillOpacity",
-                to: 1,
-                duration: 200,
-                easing: am5.ease.inOut(am5.ease.cubic)
-              })
-            })
-          }
-          
-          const countryData = {
-            countryCode,
-            name: countryNamesTajik[countryCode] || countryCode,
-            continent: getContinentByCountry(countryCode)
-          }
-          
-          console.log('Emitting country-click event:', countryData) // Debug log
-          emit('country-click', countryData)
+          handleCountrySelection(polygon, countryCode)
         } else {
           console.log('No country code found for clicked element') // Debug log
         }
       })
+      
+      // Alternative click handling using different event binding
+      polygonSeries.mapPolygons.template.on("hit", function(ev) {
+        console.log('Hit event triggered on polygon') // Debug log
+        const polygon = ev.target
+        const dataItem = polygon.dataItem
+        const countryCode = dataItem ? dataItem.get("id") : null
+        
+        if (countryCode) {
+          handleCountrySelection(polygon, countryCode)
+        }
+      })
+      
+      // Function to handle country selection
+      const handleCountrySelection = (polygon, countryCode) => {
+        console.log('handleCountrySelection called for:', countryCode) // Debug log
+        
+        // Remove previous selection
+        if (selectedPolygon) {
+          selectedPolygon.states.applyAnimate("default")
+        }
+        
+        // Apply selection animation to clicked country
+        selectedPolygon = polygon
+        selectedPolygon.states.applyAnimate("active")
+        
+        // Add pulse animation for learning mode
+        if (props.mode === 'learning') {
+          const pulseAnimation = selectedPolygon.animate({
+            key: "fillOpacity",
+            to: 0.7,
+            duration: 200,
+            easing: am5.ease.inOut(am5.ease.cubic)
+          })
+          
+          pulseAnimation.events.on("stopped", () => {
+            selectedPolygon.animate({
+              key: "fillOpacity",
+              to: 1,
+              duration: 200,
+              easing: am5.ease.inOut(am5.ease.cubic)
+            })
+          })
+        }
+        
+        const countryData = {
+          countryCode,
+          name: countryNamesTajik[countryCode] || countryCode,
+          continent: getContinentByCountry(countryCode)
+        }
+        
+        console.log('Emitting country-click event:', countryData) // Debug log
+        emit('country-click', countryData)
+      }
       
       // Add additional event listeners to ensure clicks are captured
       polygonSeries.events.on("datavalidated", () => {
         console.log('Polygon series data validated, countries loaded') // Debug log
         
         // Ensure all polygons are properly interactive
+        let polygonCount = 0
         polygonSeries.mapPolygons.each((polygon) => {
           polygon.set("interactive", true)
           polygon.set("cursorOverStyle", "pointer")
+          
+          // Add direct event listener as backup
+          polygon.onPrivate("maskRectangle", () => {
+            console.log('Polygon mask rectangle updated')
+          })
+          polygonCount++
         })
+        console.log(`Set up ${polygonCount} polygons as interactive`)
+        
+        // Add global click listener to the chart container as fallback with coordinate-based country detection
+        if (chartContainer.value) {
+          chartContainer.value.addEventListener('click', (event) => {
+            console.log('Direct click on chart container:', event)
+            console.log('Click coordinates:', { x: event.clientX, y: event.clientY })
+            
+            // Get the container bounds for coordinate conversion
+            const containerRect = chartContainer.value.getBoundingClientRect()
+            const relativeX = event.clientX - containerRect.left
+            const relativeY = event.clientY - containerRect.top
+            
+            console.log('Relative coordinates:', { x: relativeX, y: relativeY })
+            
+            // Simple approach: use amCharts' built-in point-to-coordinate conversion
+            try {
+              // Convert pixel coordinates to geographic coordinates if possible
+              const mapPoint = chart.convert({ x: relativeX, y: relativeY })
+              console.log('Map point:', mapPoint)
+              
+              // Alternative approach: check elements at the click point in DOM
+              const elementsAtPoint = document.elementsFromPoint(event.clientX, event.clientY)
+              console.log('Elements at click point:', elementsAtPoint.length, 'elements')
+              
+              // Look for amCharts elements in the DOM hierarchy
+              let foundCountryCode = null
+              for (const element of elementsAtPoint) {
+                // Check if element has amCharts data attributes or path data
+                if (element.tagName === 'path' || element.tagName === 'g') {
+                  // Try to find country code in element attributes or data
+                  const dataId = element.getAttribute('data-id') || 
+                               element.getAttribute('aria-label') ||
+                               element.getAttribute('data-country')
+                  
+                  if (dataId) {
+                    foundCountryCode = dataId
+                    break
+                  }
+                }
+                
+                // Check parent elements for data
+                let parent = element.parentElement
+                let depth = 0
+                while (parent && depth < 5) {
+                  const parentDataId = parent.getAttribute('data-id') || 
+                                     parent.getAttribute('aria-label') ||
+                                     parent.getAttribute('data-country')
+                  if (parentDataId) {
+                    foundCountryCode = parentDataId
+                    break
+                  }
+                  parent = parent.parentElement
+                  depth++
+                }
+                
+                if (foundCountryCode) break
+              }
+              
+              if (foundCountryCode) {
+                console.log('Found country from DOM:', foundCountryCode)
+                // Find the corresponding polygon
+                let foundPolygon = null
+                polygonSeries.mapPolygons.each((polygon) => {
+                  const countryCode = polygon.dataItem?.get("id")
+                  if (countryCode === foundCountryCode) {
+                    foundPolygon = polygon
+                    return false // Break loop
+                  }
+                })
+                
+                if (foundPolygon) {
+                  handleCountrySelection(foundPolygon, foundCountryCode)
+                } else {
+                  console.log('Polygon not found for country code:', foundCountryCode)
+                }
+              } else {
+                console.log('No country found at click coordinates - trying geometric approach')
+                
+                // Fallback: iterate through all polygons and test if point is inside
+                let foundPolygon = null
+                let smallestArea = Infinity
+                
+                polygonSeries.mapPolygons.each((polygon) => {
+                  const countryCode = polygon.dataItem?.get("id")
+                  if (!countryCode) return
+                  
+                  // Get polygon's global bounds
+                  const bounds = polygon.globalBounds()
+                  if (bounds) {
+                    const left = bounds.left
+                    const right = bounds.right  
+                    const top = bounds.top
+                    const bottom = bounds.bottom
+                    const area = (right - left) * (bottom - top)
+                    
+                    // Check if click is within bounds
+                    if (relativeX >= left && relativeX <= right && 
+                        relativeY >= top && relativeY <= bottom && 
+                        area < smallestArea) {
+                      foundPolygon = polygon
+                      smallestArea = area
+                    }
+                  }
+                })
+                
+                if (foundPolygon) {
+                  const countryCode = foundPolygon.dataItem?.get("id")
+                  console.log('Found country via bounds check:', countryCode)
+                  handleCountrySelection(foundPolygon, countryCode)
+                } else {
+                  console.log('No country found at coordinates:', { x: relativeX, y: relativeY })
+                }
+              }
+            } catch (error) {
+              console.error('Error in coordinate-based country detection:', error)
+              console.log('Error details:', error.message, error.stack)
+            }
+          })
+        }
+        
+        // Add individual event listeners to each polygon for direct interaction
+        setTimeout(() => {
+          console.log('Setting up individual polygon click listeners...')
+          polygonSeries.mapPolygons.each((polygon, index) => {
+            if (index < 5) console.log(`Setting up polygon ${index}:`, polygon.dataItem?.get("id"))
+            
+            // Multiple event binding approaches
+            polygon.on("click", (ev) => {
+              console.log('Individual polygon click:', ev.target.dataItem?.get("id"))
+              const countryCode = ev.target.dataItem?.get("id")
+              if (countryCode) {
+                handleCountrySelection(ev.target, countryCode)
+              }
+            })
+            
+            polygon.on("pointerdown", (ev) => {
+              console.log('Individual polygon pointerdown:', ev.target.dataItem?.get("id"))
+            })
+          })
+        }, 1000)
       })
 
       // Enhanced hover handler with tooltip
