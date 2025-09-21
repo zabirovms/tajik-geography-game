@@ -1,101 +1,51 @@
 # World Geography Games
 
-## Overview
-A Vue.js-based geography learning game application converted from a UniApp project. The application features multiple game modes including flag identification, country shapes, capitals, timed challenges, multiplayer, and random mode games.
+A Vue.js application featuring interactive geography games using amCharts5 for mapping and visualization.
 
-## Recent Changes
-- **2025-09-20**: Successfully converted UniApp project to Vue.js web application
-- **2025-09-20**: Resolved dependency conflicts and created proper Vite configuration
-- **2025-09-20**: Set up frontend workflow on port 5000 with proper host configuration for Replit
-- **2025-09-20**: Configured deployment settings for production
+## Project Overview
+- **Name**: World Geography Games
+- **Type**: Frontend web application
+- **Framework**: Vue.js 3 with Vue Router
+- **Build Tool**: Vite
+- **Mapping Library**: amCharts 5 with geodata
+- **Styling**: SCSS/Sass
+- **Language**: Multi-language support (includes Tajik)
 
-## Project Architecture
+## Architecture
+This is a uni-app based project that can run on multiple platforms, but currently configured to run as a web application. The project includes:
 
-### Technology Stack
-- **Frontend Framework**: Vue.js 3.4.0
-- **Build Tool**: Vite 4.0.0
-- **Router**: Vue Router 4.0.0
-- **Styling**: Sass/SCSS, CSS3 with responsive design
-- **Development Server**: Vite dev server on port 5000
+- Interactive world map with country data
+- Multiple game modes (Capitals, Flags, Shapes, Timed Challenge, Multiplayer, Random Mode)
+- Achievement system
+- User profile management
+- Multi-language support
 
-### Directory Structure
-```
-src/
-├── main.js              # Application entry point
-├── App.vue              # Root component
-├── style.css            # Global styles
-├── router/
-│   └── index.js         # Vue Router configuration
-├── views/
-│   ├── Home.vue         # Main homepage
-│   ├── Achievements.vue # Achievements page
-│   ├── Profile.vue      # User profile page
-│   └── games/           # Game components
-│       ├── FlagsGame.vue
-│       ├── ShapesGame.vue
-│       ├── CapitalsGame.vue
-│       ├── TimedChallenge.vue
-│       ├── Multiplayer.vue
-│       └── RandomMode.vue
-└── components/          # Reusable components
-```
+## Key Components
+- **WorldMapViewer**: Main interactive map component
+- **GameContainer**: Container for various game modes
+- **CountryTooltip**: Interactive country information display
+- Game modes: CapitalsGame, FlagsGame, ShapesGame, TimedChallenge, Multiplayer, RandomMode
 
-### Game Features
-1. **Flag Challenge** - Country flag identification
-2. **Shape Challenge** - Country outline recognition
-3. **Capital Challenge** - Capital city knowledge
-4. **Timed Challenge** - Speed-based geography questions
-5. **Multiplayer** - Social gaming features
-6. **Random Mode** - Mixed question types
-
-## Development Workflow
-
-### Running Locally
-```bash
-npm run dev
-```
-- Starts Vite development server on port 5000
-- Accessible at http://localhost:5000
-- Hot module replacement enabled
-- Configured for Replit environment with host 0.0.0.0
-
-### Building for Production
-```bash
-npm run build
-```
-- Builds optimized production bundle to `dist/` directory
-- Static assets are optimized and compressed
-
-### Preview Production Build
-```bash
-npm run preview
-```
-- Serves production build for testing
+## Development Setup
+- **Port**: 5000 (configured for Replit)
+- **Host**: 0.0.0.0 (allows external access)
+- **Dev Server**: Vite with HMR disabled for Replit compatibility
+- **Build**: Standard Vite build process
 
 ## Deployment Configuration
 - **Target**: Autoscale (stateless web application)
 - **Build Command**: `npm run build`
-- **Run Command**: `npx serve -s dist -l 5000`
-- **Port**: 5000 (configured for Replit)
+- **Serve Command**: `serve -s dist -l 5000`
 
-## User Preferences
-- Clean, modern UI design
-- Mobile-responsive layout
-- Emoji-based icons for visual appeal
-- Chinese language interface
-- Bottom navigation for mobile experience
+## Recent Changes
+- **2024-09-21**: Initial import setup completed
+  - Installed all dependencies
+  - Configured Vite server for Replit environment (host: 0.0.0.0, allowedHosts: true)
+  - Verified application runs successfully with world map initialization
+  - Set up deployment configuration for production
 
-## Technical Notes
-- Converted from UniApp to standard Vue.js for better web compatibility
-- Removed UniApp-specific dependencies that caused version conflicts
-- Implemented custom routing instead of UniApp's page routing
-- Replaced UniApp UI components with standard HTML/CSS equivalents
-- Maintained original design aesthetic and functionality
-
-## Next Steps for Further Development
-1. Implement actual game logic for each game mode
-2. Add backend API integration for scoring and leaderboards
-3. Implement user authentication and progress tracking
-4. Add more interactive features and animations
-5. Expand question database for each game type
-6. Add sound effects and improved visual feedback
+## Current Status
+✅ Frontend application running successfully on port 5000
+✅ amCharts world map initializes and loads country data
+✅ Multi-language support active (detected Tajik language)
+✅ Deployment configuration completed
